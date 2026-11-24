@@ -1,0 +1,5 @@
+SleekDB 2.15 (MIT), unmodified, from https://github.com/SleekDB/SleekDB/archive/refs/tags/2.15.zip
+SHA256 of the zip: 3cbeee595b9828559c94804149fbe48812f02c501a0df2c7bca5c2c3d5b6d5dd
+Bundled so no Composer is needed on shared hosting.
+Modification: added explicit nullable types (?Type $x = null) to function signatures so PHP 8.4 raises no deprecation notices. No logic changed.
+Modification: ConditionsHandler.php line 105 casts the compared field to string so LIKE on a null field raises no PHP 8.1+ deprecation.
