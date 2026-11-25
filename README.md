@@ -51,6 +51,8 @@ Attractions are stored locally and refreshed by a sync, so pages and search do n
 
 Load or refresh the catalog with `php bin/sync.php --all` (all pages in one go) or `php bin/sync.php` (5 pages per run, resumes where it stopped, for hosts with short time limits). Run it from cron to keep content fresh.
 
+Incremental refresh: `php bin/sync.php --updates` reads the supplier feed `GET /content/updates`, re-fetches only the attractions that changed (and removes deleted ones), and saves the feed cursor in the catalog meta. It starts from the time of the last full sync, so run `--all` once first. Run it from cron every few minutes. The feed's query parameter is sent as `cursor` (the response field is `nextCursor`); the staging API currently answers 404 for this feed, in which case the command prints the API error and exits with code 1. Keep the periodic full sync as well, because it is what removes attractions the feed missed.
+
 SleekDB 2.15 (MIT) is bundled in `lib/SleekDB`; see `lib/SleekDB/SOURCE.txt` for the two small compatibility edits.
 
 ## Settings page and payments

@@ -26,9 +26,15 @@ final class Concourse
         ];
     }
 
-    public function attraction(string $id): Attraction
+    public function attraction(string $id, bool $fresh = false): Attraction
     {
-        return Attraction::fromArray($this->client->get('/attractions/' . rawurlencode($id), [], Config::int('cache.ttl.detail')));
+        return Attraction::fromArray($this->client->get('/attractions/' . rawurlencode($id), [], $fresh ? 0 : Config::int('cache.ttl.detail')));
+    }
+
+    public function contentUpdates(?string $cursor): array
+    {
+        $data = $this->client->get('/content/updates', ['cursor' => $cursor], 0);
+        return ['items' => $data['items'] ?? [], 'nextCursor' => isset($data['nextCursor']) ? (string) $data['nextCursor'] : null];
     }
 
     public function products(string $attractionId): array

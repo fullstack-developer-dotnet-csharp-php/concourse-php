@@ -57,6 +57,11 @@ final class MysqlCatalogStore implements CatalogStore
         return $stmt->rowCount();
     }
 
+    public function remove(string $id): void
+    {
+        $this->db->prepare('DELETE FROM attractions WHERE id = ?')->execute([$id]);
+    }
+
     public function count(): int
     {
         return (int) $this->db->query('SELECT COUNT(*) FROM attractions')->fetchColumn();

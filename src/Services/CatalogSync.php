@@ -13,6 +13,69 @@ final class CatalogSync
     {
     }
 
+    public function runUpdates(int $maxPages): array
+    {
+        $cursor = $this->store->meta('sync.updates_cursor');
+        if ($cursor === null || $cursor === '') {
+            $cursor = $this->store->meta('sync.last_finished');
+            if ($cursor === null || $cursor === '') {
+                throw new \RuntimeException('Run a full sync first (php bin/sync.php --all). The update feed needs a starting point.');
+            }
+        }
+        $started = microtime(true);
+        $changed = [];
+        $removed = [];
+        $pages = 0;
+        $next = $cursor;
+        while ($pages < $maxPages) {
+            $feed = $this->api->contentUpdates($next);
+            $pages++;
+            foreach ($feed['items'] as $item) {
+                $id = (string) ($item['attractionId'] ?? $item['id'] ?? '');
+                if ($id === '') {
+                    continue;
+                }
+                if (($item['type'] ?? '') === 'attraction' && ($item['changeType'] ?? '') === 'deleted') {
+                    $removed[$id] = true;
+                    unset($changed[$id]);
+                } else {
+                    $changed[$id] = true;
+                    unset($removed[$id]);
+                }
+            }
+            $newCursor = $feed['nextCursor'];
+            if ($feed['items'] === [] || $newCursor === null || $newCursor === $next) {
+                break;
+            }
+            $next = $newCursor;
+        }
+
+        $runId = $this->store->meta('sync.run') ?: bin2hex(random_bytes(8));
+        $rows = [];
+        foreach (array_keys($changed) as $id) {
+            $rows[] = $this->api->attraction($id, true)->toRow();
+        }
+        if ($rows !== []) {
+            $this->store->upsert($rows, $runId);
+        }
+        foreach (array_keys($removed) as $id) {
+            $this->store->remove($id);
+        }
+        $this->store->setMeta('sync.updates_cursor', $next);
+
+        $status = [
+            'mode' => 'updates',
+            'feedPages' => $pages,
+            'attractionsRefreshed' => count($rows),
+            'attractionsRemoved' => count($removed),
+            'cursor' => $next,
+            'stored' => $this->store->count(),
+            'seconds' => round(microtime(true) - $started, 1),
+        ];
+        Log::info('Catalog update sync', $status);
+        return $status;
+    }
+
     public function run(int $pagesPerRun): array
     {
         $runId = $this->store->meta('sync.run') ?: bin2hex(random_bytes(8));

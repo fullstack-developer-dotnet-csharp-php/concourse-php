@@ -9,6 +9,8 @@ interface CatalogStore
 
     public function removeNotSeen(string $runId): int;
 
+    public function remove(string $id): void;
+
     public function count(): int;
 
     public function all(): array;

@@ -46,6 +46,13 @@ final class SleekCatalogStore implements CatalogStore
         return count($stale);
     }
 
+    public function remove(string $id): void
+    {
+        foreach ($this->attractions->createQueryBuilder()->where(['id', '=', $id])->getQuery()->fetch() as $doc) {
+            $this->attractions->deleteById($doc['_id']);
+        }
+    }
+
     public function count(): int
     {
         return $this->attractions->count();
