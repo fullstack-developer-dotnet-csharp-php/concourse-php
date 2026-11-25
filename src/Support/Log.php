@@ -121,8 +121,9 @@ final class Log
         if ($curlError !== null) {
             $context['curlError'] = $curlError;
         }
-        if ($status === 0 || $status >= 400) {
-            $context['responseBody'] = $body;
+        if ($body !== null) {
+            $decodedBody = json_decode($body, true);
+            $context['responseBody'] = is_array($decodedBody) ? $decodedBody : $body;
         }
         if ($requestBody !== null) {
             $decoded = json_decode($requestBody, true);

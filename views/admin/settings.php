@@ -1,3 +1,4 @@
+<?php echo App\Support\View::partial('admin_nav'); ?>
 <?php
 use App\Support\Config;
 use App\Support\Csrf;

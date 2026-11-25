@@ -45,7 +45,7 @@ final class Client
     public function raw(string $path, array $query = []): array
     {
         $url = $this->url($path, $query);
-        $result = $this->request('GET', $url, null, null);
+        $result = $this->request('GET', $url, null, null, ($query['format'] ?? '') === 'pdf' ? 'application/pdf' : 'text/html');
         if ($result['status'] >= 400) {
             $this->decode($result, $url);
         }
@@ -58,9 +58,9 @@ final class Client
         return rtrim($this->baseUrl, '/') . $path . ($query ? '?' . http_build_query($query) : '');
     }
 
-    private function request(string $method, string $url, ?string $body, ?string $idempotencyKey): array
+    private function request(string $method, string $url, ?string $body, ?string $idempotencyKey, string $accept = 'application/json, application/pdf, text/html'): array
     {
-        $headers = ['Authorization: Bearer ' . $this->apiKey, 'Accept: application/json, application/pdf, text/html'];
+        $headers = ['Authorization: Bearer ' . $this->apiKey, 'Accept: ' . $accept];
         if ($body !== null) {
             $headers[] = 'Content-Type: application/json';
         }

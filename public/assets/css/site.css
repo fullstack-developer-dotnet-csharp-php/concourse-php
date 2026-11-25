@@ -232,3 +232,16 @@ input, select { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1p
 .test-result.is-bad { color: var(--danger); }
 .notice.ok { background: #dcfce7; color: #14532d; }
 .notice.error { background: #fee2e2; color: #7f1d1d; }
+
+.log-filter { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; }
+.log-filter input, .log-filter select { padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--text); }
+.log-counts { display: flex; flex-wrap: wrap; gap: 6px; }
+.log-table td { white-space: normal; vertical-align: top; }
+.log-table .log-msg { word-break: break-word; min-width: 320px; }
+.log-table pre { max-height: 320px; overflow: auto; background: var(--bg); padding: 10px; border-radius: 8px; font-size: .8rem; white-space: pre-wrap; }
+.log-error, .log-critical { background: #fee2e2; color: #991b1b; }
+.log-warning { background: #fef3c7; color: #78350f; }
+.log-notice { background: #dbeafe; color: #1e3a8a; }
+.log-row-error, .log-row-critical { background: rgba(254, 226, 226, .35); }
+
+.admin-nav { display: flex; gap: 16px; padding-top: 14px; font-weight: 600; }

@@ -1,3 +1,4 @@
+<?php echo App\Support\View::partial('admin_nav'); ?>
 <div class="container page-head">
     <h1>Orders</h1>
     <p class="muted"><?= e(count($orders)) ?> orders returned by the API for this key.</p>

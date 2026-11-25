@@ -150,7 +150,7 @@ final class Checkout
     {
         $record = $this->pending->get($id);
         if ($record === null) {
-            throw new RuntimeException('Unknown payment reference.');
+            throw new NotFoundException('Unknown payment reference.');
         }
         if (in_array($record['status'], ['booked', 'booking_failed'], true)) {
             return $record;
@@ -187,6 +187,8 @@ final class Checkout
                 $r['status'] = 'booked';
                 $r['orderNumber'] = $order->orderNumber;
                 Log::info('Booking created after payment', ['ref' => $id, 'order' => $order->orderNumber]);
+                $r['orderNumber'] = $order->orderNumber;
+                TicketMailer::send($r);
             } catch (Throwable $e) {
                 $r['status'] = 'booking_failed';
                 $r['error'] = $e->getMessage();

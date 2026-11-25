@@ -30,7 +30,7 @@ final class SeoController
 
     public function robots(): Response
     {
-        $lines = ['User-agent: *', 'Allow: /', 'Disallow: /orders', 'Disallow: /book/', '',
+        $lines = ['User-agent: *', 'Allow: /', 'Disallow: /orders', 'Disallow: /admin', 'Disallow: /pay/', 'Disallow: /book/', '',
             'User-agent: GPTBot', 'Allow: /', '', 'User-agent: ClaudeBot', 'Allow: /', '', 'User-agent: PerplexityBot', 'Allow: /', '',
             'User-agent: Google-Extended', 'Allow: /', '', 'Sitemap: ' . abs_url('/sitemap.xml')];
         return Response::text(implode("\n", $lines) . "\n", 'text/plain');

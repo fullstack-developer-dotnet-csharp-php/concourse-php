@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Payments\Gateway;
+use App\Services\Concourse;
 use App\Support\Config;
 use App\Support\Log;
 use App\Support\NotFoundException;
@@ -14,7 +15,7 @@ use RuntimeException;
 
 final class PaymentController
 {
-    public function __construct(private Gateway $gateway)
+    public function __construct(private Gateway $gateway, private Concourse $api)
     {
     }
 
@@ -34,7 +35,7 @@ final class PaymentController
     {
         $id = input($_GET, 'order_id');
         if ($id === '') {
-            throw new RuntimeException('The payment return link has no order reference.');
+            throw new NotFoundException('The payment return link has no order reference.');
         }
         $this->gateway->checkout()->finalize($id);
         return Response::redirect('/pay/result/' . rawurlencode($id));
@@ -49,7 +50,22 @@ final class PaymentController
         if (in_array($record['status'], ['awaiting_payment', 'paid'], true)) {
             $record = $this->gateway->checkout()->finalize($id);
         }
-        return $this->page('pay/result', 'Booking status', ['record' => $record, 'debug' => Config::bool('debug')]);
+        return $this->page('pay/result', 'Booking status', ['record' => $record, 'debug' => Config::bool('debug') && \App\Support\Admin::isLoggedIn()]);
+    }
+
+    public function voucher(string $id): Response
+    {
+        $record = $this->gateway->pending()->get($id);
+        if ($record === null || $record['status'] !== 'booked' || empty($record['orderNumber'])) {
+            throw new NotFoundException('No ticket is available for this reference.');
+        }
+        $pdf = ($_GET['format'] ?? '') === 'pdf';
+        $result = $this->api->voucher($record['orderNumber'], $pdf);
+        $headers = ['Content-Type' => $result['contentType'] ?: ($pdf ? 'application/pdf' : 'text/html; charset=utf-8'), 'X-Robots-Tag' => 'noindex'];
+        if ($pdf) {
+            $headers['Content-Disposition'] = 'attachment; filename="tickets-' . $record['orderNumber'] . '.pdf"';
+        }
+        return new Response(200, $result['body'], $headers);
     }
 
     public function webhook(): Response

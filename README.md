@@ -60,3 +60,21 @@ Open `/admin/settings`. On first visit you are sent to `/admin/setup`: copy the 
 Cashfree: enter the App ID and Secret key, pick sandbox or production, and turn on "Take payment before booking". Checkout then works like this: the visitor pays on the Cashfree page, the site confirms the payment with Cashfree, and only then creates the booking with the supplier (with the payment reference as the idempotency key, so a double confirmation cannot book twice). The webhook URL `https://your-site/pay/webhook` can be added in the Cashfree dashboard as a backup confirmation. Ticket prices are in the supplier currency (USD on staging) while Cashfree charges INR, so set the exchange rate on the settings page.
 
 Order pages (`/orders`) now require the admin login.
+
+## Install on a server
+
+1. Upload the folder to a host with PHP 8.2+ (extensions: curl, json, mbstring, openssl; pdo_mysql only for MySQL storage).
+2. Point the web root at `public/`. On Apache without access to the vhost, the root `.htaccess` forwards to `public/` and blocks `src`, `config`, `storage`, `bin`, `lib`, `views` and `logs`. On nginx send every request that is not a file to `public/index.php`.
+3. Make `storage/` writable by the web user.
+4. Run `php bin/check.php`. It lists every missing requirement.
+5. Open `/admin/setup`, paste the token from `storage/setup-token.txt`, set the admin password, then fill in `/admin/settings` (API key, public URL, Cashfree keys).
+6. Run `php bin/sync.php --all`, then add it to cron for refreshes.
+
+## Logs manager
+
+`/admin/logs` (admin login required, link "Logs" in the header). Pick a daily file, filter by minimum level, search text or request id, expand a line to see its JSON details, download or delete a file. Click a request id to see every line of that request. Files larger than 50 MB must be downloaded. Retention is set in settings (default 14 days).
+
+## Tests
+
+- `python bin/monkey.py http://localhost:8080 <seed> <rounds>` sends random paths, query strings and POST bodies (injection strings, huge values, bad ids) and flags any 5xx response, PHP warning or unescaped output. Upstream 502s for malformed attraction ids come from the supplier API.
+- Payment test (sandbox): use Cashfree test keys, enable payments, book a ticket and pay with card 4111 1111 1111 1111, any future expiry, any CVV, OTP 111000, then choose SUCCESS in the simulator.

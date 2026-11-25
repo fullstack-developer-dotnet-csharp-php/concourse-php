@@ -80,7 +80,7 @@ final class Kernel
         $attractions = new AttractionsController($api, $catalog);
         $gateway = new Gateway($api);
         $booking = new BookingController($api, $gateway);
-        $payments = new PaymentController($gateway);
+        $payments = new PaymentController($gateway, $api);
         $admin = new AdminController();
         $orders = new OrdersController($api);
         $seo = new SeoController($catalog);
@@ -107,10 +107,14 @@ final class Kernel
         $r->add('POST', '/admin/logout', fn() => $admin->logout());
         $r->add('GET', '/admin/settings', fn() => $admin->settings());
         $r->add('POST', '/admin/settings', fn() => $admin->save());
+        $r->add('GET', '/admin/logs', fn() => $admin->logs());
+        $r->add('GET', '/admin/logs/{name}', fn(string $name) => $admin->logDownload($name));
+        $r->add('POST', '/admin/logs/{name}/delete', fn(string $name) => $admin->logDelete($name));
         $r->add('POST', '/admin/test/{target}', fn(string $target) => $admin->test($target));
         $r->add('GET', '/pay/checkout/{id}', fn(string $id) => $payments->checkout($id));
         $r->add('GET', '/pay/return', fn() => $payments->returned());
         $r->add('GET', '/pay/result/{id}', fn(string $id) => $payments->result($id));
+        $r->add('GET', '/pay/result/{id}/voucher', fn(string $id) => $payments->voucher($id));
         $r->add('POST', '/pay/webhook', fn() => $payments->webhook());
         $r->add('GET', '/favicon.ico', fn() => Response::redirect('/assets/favicon.svg', 301));
         $r->add('GET', '/sitemap.xml', fn() => $seo->sitemap());
@@ -127,6 +131,22 @@ final class Kernel
         return Response::html(View::render('errors/not_found', ['path' => $path, 'api' => $api]), 404);
     }
 
+    private static function customerMessage(Throwable $e): string
+    {
+        if ($e instanceof ApiException) {
+            return $e->status === 0 || $e->status === 429 || $e->status >= 500
+                ? 'Our ticket supplier is not responding right now. Please try again in a few minutes.'
+                : 'We could not complete this request with our ticket supplier. Please check your details and try again.';
+        }
+        if ($e instanceof \App\Payments\CashfreeException) {
+            return 'We could not start the payment. Nothing has been charged. Please try again.';
+        }
+        if ($e instanceof ForbiddenException || get_class($e) === \RuntimeException::class || get_class($e) === \InvalidArgumentException::class) {
+            return $e->getMessage();
+        }
+        return 'Something went wrong on our side. Please try again in a few minutes.';
+    }
+
     private static function error(Throwable $e): Response
     {
         $seo = Seo::current();
@@ -140,6 +160,7 @@ final class Kernel
                 default => 502,
             };
         }
-        return Response::html(View::render('errors/error', ['e' => $e, 'debug' => Config::bool('debug')]), $status);
+        $detail = Config::bool('debug') && Admin::isLoggedIn();
+        return Response::html(View::render('errors/error', ['e' => $e, 'detail' => $detail, 'message' => self::customerMessage($e), 'requestId' => Log::requestId()]), $status);
     }
 }

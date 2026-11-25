@@ -12,6 +12,7 @@ use App\Support\Admin;
 use App\Support\Config;
 use App\Support\Csrf;
 use App\Support\FileCache;
+use App\Support\LogReader;
 use App\Support\Response;
 use App\Support\Seo;
 use App\Support\Settings;
@@ -82,6 +83,42 @@ final class AdminController
             return $this->settingsPage($errors, null, $submitted);
         }
         return Response::redirect('/admin/settings?saved=1');
+    }
+
+    public function logs(): Response
+    {
+        if ($gate = Admin::require()) {
+            return $gate;
+        }
+        $files = LogReader::files();
+        $file = input($_GET, 'file') ?: ($files[0]['name'] ?? '');
+        $level = strtoupper(input($_GET, 'level'));
+        $query = input($_GET, 'q');
+        $request = input($_GET, 'request');
+        $limit = min(1000, max(10, (int) (input($_GET, 'limit') ?: 200)));
+        $result = $file !== '' ? LogReader::read($file, $level, $query, $request, $limit) : ['rows' => [], 'matched' => 0, 'total' => 0];
+        return $this->page('admin/logs', 'Logs', [
+            'files' => $files, 'file' => $file, 'level' => $level, 'q' => $query, 'request' => $request, 'limit' => $limit,
+            'result' => $result, 'counts' => $file !== '' ? LogReader::counts($file) : [], 'deleted' => ($_GET['deleted'] ?? '') === '1',
+        ]);
+    }
+
+    public function logDownload(string $name): Response
+    {
+        if ($gate = Admin::require()) {
+            return $gate;
+        }
+        return Response::text((string) file_get_contents(LogReader::path($name)), 'text/plain; charset=utf-8');
+    }
+
+    public function logDelete(string $name): Response
+    {
+        if ($gate = Admin::require()) {
+            return $gate;
+        }
+        Csrf::verify();
+        LogReader::delete($name);
+        return Response::redirect('/admin/logs?deleted=1');
     }
 
     public function test(string $target): Response

@@ -1,3 +1,4 @@
+<?php echo App\Support\View::partial('admin_nav'); ?>
 <div class="container page-head">
     <nav class="crumbs" aria-label="Breadcrumb"><a href="/orders">Orders</a><span><?= e($order->orderNumber) ?></span></nav>
     <h1>Order <?= e($order->orderNumber) ?> <span class="badge badge-<?= e($order->status) ?>"><?= e($order->status) ?></span></h1>

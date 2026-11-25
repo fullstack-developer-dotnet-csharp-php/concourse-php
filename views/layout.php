@@ -70,8 +70,6 @@ $canonical = $seo->canonical !== '' ? $seo->canonical : '';
             <?php endforeach; ?>
             <?php if (isset($nav['error'])): ?><span class="error small" title="<?= e($nav['error']) ?>">Menus unavailable</span><?php endif; ?>
             <a href="/attractions">Attractions</a>
-            <?php if (Config::bool('site.orders_enabled') && App\Support\Admin::isLoggedIn()): ?><a href="/orders">Orders</a><?php endif; ?>
-            <?php if (App\Support\Admin::isLoggedIn()): ?><a href="/admin/settings">Settings</a><?php endif; ?>
         </nav>
     </div>
 </header>

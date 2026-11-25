@@ -95,11 +95,12 @@ final class BookingController
             $first = trim((string) $guest['first']);
             $last = trim((string) $guest['last']);
             $email = trim((string) ($guest['email'] ?? ''));
-            $phone = preg_replace('/[^\d]/', '', (string) ($guest['phone'] ?? '')) ?? '';
+            $rawPhone = trim((string) ($guest['phone'] ?? ''));
+            $phone = (str_starts_with($rawPhone, '+') ? '+' : '') . (preg_replace('/[^\d]/', '', $rawPhone) ?? '');
             if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
                 throw new RuntimeException('A valid email address is required to pay.');
             }
-            if (strlen($phone) < 10 || strlen($phone) > 15) {
+            if (strlen(ltrim($phone, '+')) < 10 || strlen(ltrim($phone, '+')) > 15) {
                 throw new RuntimeException('A valid phone number (10 to 15 digits) is required to pay.');
             }
             $paid = array_filter($quantities, static fn(int $q) => $q > 0);

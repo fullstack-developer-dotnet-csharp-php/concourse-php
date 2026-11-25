@@ -20,6 +20,10 @@
     </dl>
     <?php if ($status === 'booked'): ?>
         <p>Your tickets are booked. Keep the order number above.</p>
+        <p>
+            <a class="btn btn-primary" href="/pay/result/<?= e(rawurlencode($record['id'])) ?>/voucher" target="_blank" rel="noopener">View tickets</a>
+            <a class="btn btn-ghost" href="/pay/result/<?= e(rawurlencode($record['id'])) ?>/voucher?format=pdf">Download PDF</a>
+        </p>
     <?php elseif ($status === 'booking_failed'): ?>
         <div class="notice error" role="alert">Your payment went through but the supplier did not confirm the booking. Keep the reference <strong><?= e($record['id']) ?></strong> and contact support so it can be rebooked or refunded.<?php if ($debug && !empty($record['error'])): ?><pre><?= e($record['error']) ?></pre><?php endif; ?></div>
     <?php elseif ($status === 'payment_failed'): ?>
