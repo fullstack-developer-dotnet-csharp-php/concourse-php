@@ -1,7 +1,7 @@
 $ErrorActionPreference = 'Stop'
 $root = $PSScriptRoot
 $out = Join-Path $root 'dist'
-$stage = Join-Path $out 'funex-tickets'
+$stage = Join-Path $out 'ticket-site'
 if (Test-Path $out) { Remove-Item $out -Recurse -Force }
 New-Item -ItemType Directory -Path $stage | Out-Null
 
@@ -20,7 +20,7 @@ foreach ($sub in 'cache', 'db', 'logs', 'payments', 'sessions') {
 }
 Copy-Item (Join-Path $root 'storage\.htaccess') (Join-Path $storage '.htaccess')
 
-$zip = Join-Path $out "funex-tickets.zip"
+$zip = Join-Path $out "ticket-site.zip"
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 [System.IO.Compression.ZipFile]::CreateFromDirectory($stage, $zip)
 Get-Item $zip | Select-Object FullName, Length
