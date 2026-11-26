@@ -242,21 +242,80 @@
         return values;
     }
 
-    function field(name, label, type, required, options, saved) {
+    var lookupBase = (function () {
+        var m = location.pathname.match(/^\/attractions\/([0-9a-f]{24})\//);
+        var p = document.getElementById('booking') ? document.getElementById('booking').getAttribute('action').match(/\/book\/([0-9a-f]{24})\/([0-9a-f]{24})/) : null;
+        return p ? '/api/question-values/' + p[1] + '/' + p[2] + '/' : (m ? null : null);
+    })();
+    var listSeq = 0;
+
+    function field(name, label, type, required, options, saved, q) {
+        q = q || {};
         var wrap = el('label', {}, label + (required ? ' *' : ''));
         var input;
-        if (options && options.length) {
+        if (q.valuesFrom === 'lookup' && lookupBase) {
+            var listId = 'dl-' + (++listSeq);
+            input = el('input', { name: name, type: 'text', list: listId, autocomplete: 'off' });
+            var dl = el('datalist', { id: listId });
+            (options || []).forEach(function (o) { dl.appendChild(el('option', { value: o.key }, o.label)); });
+            wrap.appendChild(dl);
+            var timer = null;
+            input.addEventListener('input', function () {
+                clearTimeout(timer);
+                timer = setTimeout(function () {
+                    var qs = new URLSearchParams({ q: input.value });
+                    (q.valuesDependOn || []).forEach(function (k) {
+                        var other = form.querySelector('[name$="[' + k + ']"]');
+                        if (other && other.value) { qs.append('answer[' + k + ']', other.value); }
+                    });
+                    fetch(lookupBase + encodeURIComponent(q.key) + '?' + qs.toString())
+                        .then(function (r) { return r.ok ? r.json() : { items: [] }; })
+                        .then(function (d) {
+                            dl.innerHTML = '';
+                            (d.items || []).forEach(function (i) { dl.appendChild(el('option', { value: i.key }, i.label + (i.detail ? ' - ' + i.detail : ''))); });
+                        })
+                        .catch(function () { dl.innerHTML = ''; });
+                }, 250);
+            });
+        } else if (options && options.length) {
             input = el('select', { name: name });
             input.appendChild(el('option', { value: '' }, ''));
             options.forEach(function (o) { input.appendChild(el('option', { value: o.key }, o.label)); });
         } else {
             input = el('input', { name: name, type: type === 'date' ? 'date' : type === 'number' ? 'number' : type === 'email' ? 'email' : 'text' });
+            if (q.maxLength) { input.setAttribute('maxlength', String(q.maxLength)); }
+            if (type === 'number') { input.setAttribute('step', 'any'); }
         }
         if (required) { input.setAttribute('required', 'required'); }
         if (saved && saved[name] !== undefined) { input.value = saved[name]; }
         wrap.appendChild(input);
+        if (q.units && q.units.length) {
+            var unitName = name.replace(/^answers\[/, 'answers_unit[').replace(/^tanswers\[/, 'tanswers_unit[');
+            var unit = el('select', { name: unitName, 'aria-label': label + ' unit' });
+            q.units.forEach(function (u) { unit.appendChild(el('option', { value: u }, u)); });
+            if (saved && saved[unitName] !== undefined) { unit.value = saved[unitName]; }
+            wrap.appendChild(unit);
+        }
+        if (q.showWhen && q.showWhen.length) {
+            wrap.setAttribute('data-show-when', JSON.stringify(q.showWhen));
+        }
         return wrap;
     }
+
+    function applyConditions() {
+        form.querySelectorAll('[data-show-when]').forEach(function (wrap) {
+            var rules = JSON.parse(wrap.getAttribute('data-show-when'));
+            var scope = wrap.closest('.form-grid') || bookingFields;
+            var show = rules.some(function (r) {
+                var other = scope.querySelector('[name$="[' + r.key + ']"]');
+                return other && (r.values || []).indexOf(other.value) !== -1;
+            });
+            wrap.hidden = !show;
+            wrap.querySelectorAll('input, select').forEach(function (i) { i.disabled = !show; });
+        });
+    }
+    form.addEventListener('input', applyConditions);
+    form.addEventListener('change', applyConditions);
 
     var fieldLabels = { firstName: 'First name', lastName: 'Last name', dob: 'Date of birth', email: 'Email', phone: 'Phone' };
     var fieldTypes = { dob: 'date', email: 'email', phone: 'text', firstName: 'text', lastName: 'text' };
@@ -298,7 +357,7 @@
             (offer.questions || []).forEach(function (q) {
                 if (q.per === 'traveller' || seen[q.key]) { return; }
                 seen[q.key] = true;
-                bookingFields.appendChild(field('answers[' + q.key + ']', q.label || q.key, q.type, q.required, q.options, saved));
+                bookingFields.appendChild(field('answers[' + q.key + ']', q.label || q.key, q.type, q.required, q.options, saved, q));
             });
             var perTraveller = (offer.travellerFields || []).filter(function (f) { return f.per === 'traveller'; });
             var perQuestions = (offer.questions || []).filter(function (q) { return q.per === 'traveller'; });
@@ -311,12 +370,13 @@
                     grid.appendChild(field('traveller[' + offer.offerId + '][' + n + '][' + f.field + ']', fieldLabels[f.field] || f.field, fieldTypes[f.field] || 'text', f.required, null, saved));
                 });
                 perQuestions.forEach(function (q) {
-                    grid.appendChild(field('tanswers[' + offer.offerId + '][' + n + '][' + q.key + ']', q.label || q.key, q.type, q.required, q.options, saved));
+                    grid.appendChild(field('tanswers[' + offer.offerId + '][' + n + '][' + q.key + ']', q.label || q.key, q.type, q.required, q.options, saved, q));
                 });
                 box.appendChild(grid);
                 travellersEl.appendChild(box);
             }
         });
+        applyConditions();
     }
 
     document.querySelectorAll('.cal-on').forEach(function (b) {
@@ -346,5 +406,17 @@
         errorEl.hidden = problem === '';
         errorEl.textContent = problem;
         if (problem) { e.preventDefault(); }
+    });
+})();
+
+(function () {
+    var btn = document.querySelector('[data-near]');
+    if (!btn || !('geolocation' in navigator)) { return; }
+    btn.hidden = false;
+    btn.addEventListener('click', function () {
+        btn.disabled = true;
+        navigator.geolocation.getCurrentPosition(function (pos) {
+            location.href = '/attractions?near=' + pos.coords.latitude.toFixed(4) + ',' + pos.coords.longitude.toFixed(4);
+        }, function () { btn.disabled = false; btn.textContent = 'Location is blocked in this browser'; }, { timeout: 10000 });
     });
 })();

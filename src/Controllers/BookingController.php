@@ -68,7 +68,8 @@ final class BookingController
                 }
                 foreach ((array) ($_POST['tanswers'][$offerId][$num] ?? []) as $key => $value) {
                     if (trim((string) $value) !== '') {
-                        $answers[] = ['key' => (string) $key, 'value' => trim((string) $value), 'travellerNum' => $travellerNumber];
+                        $unit = trim((string) ($_POST['tanswers_unit'][$offerId][$num][$key] ?? ''));
+                        $answers[] = array_filter(['key' => (string) $key, 'value' => trim((string) $value), 'travellerNum' => $travellerNumber, 'unit' => $unit], static fn($v) => $v !== '');
                     }
                 }
             }
@@ -78,7 +79,8 @@ final class BookingController
         }
         foreach ((array) ($_POST['answers'] ?? []) as $key => $value) {
             if (trim((string) $value) !== '') {
-                $answers[] = ['key' => (string) $key, 'value' => trim((string) $value)];
+                $unit = trim((string) ($_POST['answers_unit'][$key] ?? ''));
+                $answers[] = array_filter(['key' => (string) $key, 'value' => trim((string) $value), 'unit' => $unit], static fn($v) => $v !== '');
             }
         }
 

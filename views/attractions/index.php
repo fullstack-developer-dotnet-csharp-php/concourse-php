@@ -10,6 +10,8 @@
         <form action="/attractions" method="get">
             <label for="f-q">Search</label>
             <input id="f-q" type="search" name="q" value="<?= e($q) ?>">
+            <?php if ($near !== ''): ?><input type="hidden" name="near" value="<?= e($near) ?>"><?php endif; ?>
+            <button type="button" class="btn btn-ghost btn-block" data-near hidden>Show attractions near me</button>
             <label for="f-city">Destination</label>
             <select id="f-city" name="city">
                 <option value="">All destinations</option>
@@ -25,7 +27,7 @@
                 <?php endforeach; ?>
             </select>
             <button type="submit" class="btn btn-primary btn-block">Apply</button>
-            <?php if ($q !== '' || $city !== '' || $category !== ''): ?><a class="btn btn-ghost btn-block" href="/attractions">Clear filters</a><?php endif; ?>
+            <?php if ($q !== '' || $city !== '' || $category !== '' || $near !== ''): ?><a class="btn btn-ghost btn-block" href="/attractions">Clear filters</a><?php endif; ?>
         </form>
     </aside>
 
@@ -40,9 +42,9 @@
             </div>
             <?php if ($pages > 1): ?>
                 <nav class="pager" aria-label="Pagination">
-                    <?php if ($page > 1): ?><a rel="prev" href="<?= e(query_url('/attractions', ['q' => $q, 'city' => $city, 'category' => $category, 'page' => $page - 1])) ?>">Previous</a><?php endif; ?>
+                    <?php if ($page > 1): ?><a rel="prev" href="<?= e(query_url('/attractions', ['q' => $q, 'city' => $city, 'category' => $category, 'near' => $near, 'page' => $page - 1])) ?>">Previous</a><?php endif; ?>
                     <span>Page <?= e($page) ?> of <?= e($pages) ?></span>
-                    <?php if ($page < $pages): ?><a rel="next" href="<?= e(query_url('/attractions', ['q' => $q, 'city' => $city, 'category' => $category, 'page' => $page + 1])) ?>">Next</a><?php endif; ?>
+                    <?php if ($page < $pages): ?><a rel="next" href="<?= e(query_url('/attractions', ['q' => $q, 'city' => $city, 'category' => $category, 'near' => $near, 'page' => $page + 1])) ?>">Next</a><?php endif; ?>
                 </nav>
             <?php endif; ?>
         <?php endif; ?>

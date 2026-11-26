@@ -22,7 +22,8 @@ final class Order
         public array $tickets,
         public array $vouchers,
         public ?array $cancellation,
-        public ?string $env
+        public ?string $env,
+        public array $items = []
     ) {
     }
 
@@ -46,12 +47,18 @@ final class Order
             $a['tickets'] ?? [],
             $a['vouchers'] ?? [],
             $a['cancellation'] ?? null,
-            $a['env'] ?? null
+            $a['env'] ?? null,
+            $a['items'] ?? []
         );
     }
 
     public function isCancelled(): bool
     {
-        return in_array($this->status, ['cancelled', 'refunded'], true);
+        return in_array($this->status, ['cancelled', 'refunded', 'refund_requested'], true);
+    }
+
+    public function canCancel(): bool
+    {
+        return in_array($this->status, ['confirmed', 'partial'], true);
     }
 }

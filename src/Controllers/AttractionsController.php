@@ -31,7 +31,18 @@ final class AttractionsController
         $category = input($_GET, 'category');
         $page = max(1, (int) ($_GET['page'] ?? 1));
 
-        if ($q !== '') {
+        $near = input($_GET, 'near');
+        if ($near !== '' && preg_match('/^-?\d{1,3}(\.\d+)?,-?\d{1,3}(\.\d+)?(,\d{1,3})?$/', $near) !== 1) {
+            $near = '';
+        }
+        if ($near !== '') {
+            try {
+                $source = array_values(array_filter($this->api->attractionsPage(1, 100, $q !== '' ? $q : null, false, $near)['items'], static fn(Attraction $a) => $a->bookable));
+            } catch (ApiException $e) {
+                Log::exception($e, 'Near search failed');
+                $source = [];
+            }
+        } elseif ($q !== '') {
             $source = $this->catalog->search($q, 100);
         } else {
             $source = $this->catalog->all();
@@ -42,11 +53,11 @@ final class AttractionsController
         $page = min($page, $pages);
         $items = array_slice($filtered, ($page - 1) * self::PAGE_SIZE, self::PAGE_SIZE);
 
-        $heading = $q !== '' ? 'Results for "' . $q . '"' : ($category !== '' ? $category : ($city !== '' ? 'Things to do in ' . $city : 'All attractions and tours'));
+        $heading = $near !== '' ? 'Attractions near you' : ($q !== '' ? 'Results for "' . $q . '"' : ($category !== '' ? $category : ($city !== '' ? 'Things to do in ' . $city : 'All attractions and tours')));
         $seo = Seo::current();
         $seo->title = $heading . ($page > 1 ? ' - Page ' . $page : '') . ' | ' . Config::string('site.name');
         $seo->description = $heading . ': ' . number_format($total) . ' attractions, tours and tickets with live prices and availability.';
-        $seo->noindex = $q !== '';
+        $seo->noindex = $q !== '' || $near !== '';
         $seo->canonical = abs_url(query_url('/attractions', ['city' => $city, 'category' => $category, 'page' => $page > 1 ? $page : null]));
         $seo->breadcrumb([['Home', '/'], ['Attractions', '/attractions']]);
         $seo->add(['@context' => 'https://schema.org', '@type' => 'ItemList', 'name' => $heading, 'numberOfItems' => $total,
@@ -54,7 +65,7 @@ final class AttractionsController
 
         return Response::html(View::render('attractions/index', [
             'heading' => $heading, 'items' => $items, 'total' => $total, 'page' => $page, 'pages' => $pages,
-            'q' => $q, 'city' => $city, 'category' => $category,
+            'q' => $q, 'city' => $city, 'category' => $category, 'near' => $near,
             'categories' => $this->catalog->categories(14), 'cities' => $this->catalog->cities(14),
         ]));
     }
@@ -69,6 +80,32 @@ final class AttractionsController
             }
         }
         return Response::text(json_encode(['q' => $q, 'items' => $rows], JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP), 'application/json');
+    }
+
+    public function questionValues(string $id, string $productId, string $key): Response
+    {
+        self::requireId($id);
+        self::requireId($productId);
+        if (preg_match('/^[A-Za-z0-9_]{1,64}$/', $key) !== 1) {
+            throw new \App\Support\NotFoundException('Unknown question.');
+        }
+        $answers = [];
+        foreach ((array) ($_GET['answer'] ?? []) as $k => $v) {
+            if (preg_match('/^[A-Za-z0-9_]{1,64}$/', (string) $k) === 1 && is_scalar($v)) {
+                $answers[(string) $k] = mb_substr((string) $v, 0, 200);
+            }
+        }
+        try {
+            $data = $this->api->questionValues($id, $productId, $key, mb_substr(input($_GET, 'q'), 0, 100), 20, $answers);
+            $items = array_map(static fn(array $i) => ['key' => (string) ($i['key'] ?? ''), 'label' => (string) ($i['label'] ?? ''), 'detail' => (string) ($i['detail'] ?? '')], $data['items'] ?? []);
+            $body = ['key' => (string) ($data['key'] ?? $key), 'allowFreeText' => (bool) ($data['allowFreeText'] ?? false), 'items' => array_values($items)];
+            $status = 200;
+        } catch (ApiException $e) {
+            Log::exception($e, 'Question values failed');
+            $body = ['error' => 'The list of choices could not be loaded right now.'];
+            $status = 502;
+        }
+        return Response::text(json_encode($body, JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP), 'application/json', $status);
     }
 
     private static function requireId(string $id): void
@@ -99,7 +136,13 @@ final class AttractionsController
             $seo->add($this->faqSchema($attraction->faq));
         }
 
-        return Response::html(View::render('attractions/show', ['attraction' => $attraction, 'products' => $products]));
+        $bookable = array_values(array_filter($products, static fn(Product $p) => $p->bookable));
+        $data = ['attraction' => $attraction, 'products' => $products];
+        if (count($bookable) === 1) {
+            $product = $bookable[0];
+            $data += ['inline' => $product, 'product' => $product, 'path' => $canonical, 'anchor' => '#tickets'] + $this->bookingState($attraction, $product, $canonical);
+        }
+        return Response::html(View::render('attractions/show', $data));
     }
 
     public function product(string $id, string $slug, string $productId): Response
@@ -110,6 +153,30 @@ final class AttractionsController
         $product = $this->api->product($productId);
         $path = $product->path($attraction);
 
+        $state = $this->bookingState($attraction, $product, $path);
+        $month = $state['month'];
+        $today = $state['today'];
+        $calendar = $state['calendar'];
+        $currency = $state['currency'];
+
+        $seo = Seo::current();
+        $seo->title = $product->name . ' - ' . $attraction->name . ' | ' . Config::string('site.name');
+        $seo->description = plain_text($product->description, 158) ?: $attraction->name . ' - ' . $product->name . ': check live prices and book online.';
+        $seo->canonical = abs_url($path);
+        $seo->image = (string) ($product->images[0]['url'] ?? $attraction->heroImageUrl);
+        $seo->breadcrumb([['Home', '/'], ['Attractions', '/attractions'], [$attraction->name, $attraction->path()], [$product->name, $path]]);
+        $seo->add($this->productSchema($attraction, $product, $path));
+        if ($product->faq !== []) {
+            $seo->add($this->faqSchema($product->faq));
+        }
+
+        return Response::html(View::render('attractions/product', ['attraction' => $attraction, 'product' => $product, 'path' => $path] + $state));
+    }
+
+    private function bookingState(Attraction $attraction, Product $product, string $path): array
+    {
+        $id = $attraction->id;
+        $productId = $product->id;
         $month = $this->month(input($_GET, 'month'));
         $today = new DateTimeImmutable('today');
         $calendar = [];
@@ -135,6 +202,34 @@ final class AttractionsController
             }
         }
 
+        $nextDate = null;
+        $noAvailability = false;
+        $horizon = $today->modify('+12 months');
+        if ($product->needsEvent() && $product->bookable && $availabilityError === null && $calendar === []) {
+            $from = max($month, $today);
+            $windowStart = $from;
+            $scanned = $from;
+            try {
+                while ($windowStart <= $horizon) {
+                    $windowEnd = $windowStart->modify('+29 days');
+                    $rows = $this->api->availability($id, $productId, $windowStart->format('Y-m-d'), $windowEnd->format('Y-m-d'))['calendar'] ?? [];
+                    $scanned = $windowEnd;
+                    if ($rows !== []) {
+                        $dates = array_map(static fn(array $r) => (string) $r['date'], $rows);
+                        sort($dates);
+                        $nextDate = $dates[0];
+                        break;
+                    }
+                    $windowStart = $windowEnd->modify('+1 day');
+                }
+            } catch (ApiException $e) {
+                Log::exception($e, 'Availability lookahead failed for product ' . $productId);
+                $availabilityError = $e;
+            }
+            $noAvailability = $nextDate === null && $availabilityError === null;
+            $horizon = $scanned;
+        }
+
         $currency = null;
         foreach ($calendar as $entry) {
             $currency = $entry['offers'][0]['price']['currency'] ?? $currency;
@@ -143,27 +238,13 @@ final class AttractionsController
             $currency ??= $o->currency;
         }
 
-        $seo = Seo::current();
-        $seo->title = $product->name . ' - ' . $attraction->name . ' | ' . Config::string('site.name');
-        $seo->description = plain_text($product->description, 158) ?: $attraction->name . ' - ' . $product->name . ': check live prices and book online.';
-        $seo->canonical = abs_url($path);
-        $seo->image = (string) ($product->images[0]['url'] ?? $attraction->heroImageUrl);
-        $seo->breadcrumb([['Home', '/'], ['Attractions', '/attractions'], [$attraction->name, $attraction->path()], [$product->name, $path]]);
-        $seo->add($this->productSchema($attraction, $product, $path));
-        if ($product->faq !== []) {
-            $seo->add($this->faqSchema($product->faq));
-        }
-
         $days = [];
         foreach ($calendar as $entry) {
             $days[$entry['date']][] = $entry;
         }
 
-        return Response::html(View::render('attractions/product', [
-            'attraction' => $attraction, 'product' => $product, 'path' => $path,
-            'month' => $month, 'today' => $today, 'days' => $days, 'currency' => $currency, 'priceFix' => $priceFix, 'availabilityError' => $availabilityError,
-            'idempotencyKey' => bin2hex(random_bytes(16)),
-        ]));
+        return ['month' => $month, 'today' => $today, 'calendar' => $calendar, 'days' => $days, 'currency' => $currency, 'priceFix' => $priceFix,
+            'availabilityError' => $availabilityError, 'nextDate' => $nextDate, 'noAvailability' => $noAvailability, 'horizon' => $horizon, 'idempotencyKey' => bin2hex(random_bytes(16))];
     }
 
     private function factDescription(Attraction $a): string
