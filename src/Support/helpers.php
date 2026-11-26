@@ -56,3 +56,9 @@ function plain_text(?string $html, int $max = 0): string
     }
     return $text;
 }
+
+function sort_images(array $images): array
+{
+    usort($images, static fn(array $a, array $b) => ((int) ($a['sortOrder'] ?? 0)) <=> ((int) ($b['sortOrder'] ?? 0)));
+    return array_values($images);
+}

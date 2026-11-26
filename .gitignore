@@ -1,3 +1,5 @@
-storage/
+storage/*
+!storage/.htaccess
 logs/
 config/config.local.php
+dist/

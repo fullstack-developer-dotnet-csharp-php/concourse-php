@@ -87,6 +87,11 @@ final class Client
         }
         $t = microtime(true);
         $payload = curl_exec($ch);
+        if ($payload === false && ($method === 'GET' || $idempotencyKey !== null)) {
+            Log::warning('API network error, retrying once', ['method' => $method, 'url' => $url, 'error' => curl_error($ch)]);
+            usleep(400000);
+            $payload = curl_exec($ch);
+        }
         $millis = (microtime(true) - $t) * 1000;
         if ($payload === false) {
             $error = curl_error($ch);

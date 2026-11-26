@@ -6,6 +6,7 @@ namespace App\Controllers;
 use App\Payments\Gateway;
 use App\Services\Concourse;
 use App\Support\Csrf;
+use App\Support\NotFoundException;
 use App\Support\Response;
 use RuntimeException;
 
@@ -18,6 +19,9 @@ final class BookingController
     public function book(string $attractionId, string $productId): Response
     {
         Csrf::verify();
+        if (preg_match('/^[0-9a-f]{24}$/', $attractionId) !== 1 || preg_match('/^[0-9a-f]{24}$/', $productId) !== 1) {
+            throw new NotFoundException('Unknown id.');
+        }
         $product = $this->api->product($productId);
         $quantities = array_map('intval', (array) ($_POST['qty'] ?? []));
         $guest = (array) ($_POST['guest'] ?? []);
@@ -25,6 +29,9 @@ final class BookingController
 
         if ($idempotencyKey === '') {
             throw new RuntimeException('Missing idempotency key.');
+        }
+        if (\App\Support\Legal::available() !== [] && input($_POST, 'agree') !== '1') {
+            throw new RuntimeException('Please accept the policies linked above the Book button to continue.');
         }
         if (trim((string) ($guest['first'] ?? '')) === '' || trim((string) ($guest['last'] ?? '')) === '') {
             throw new RuntimeException('Guest first and last name are required.');

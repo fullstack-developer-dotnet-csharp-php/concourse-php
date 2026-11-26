@@ -6,23 +6,23 @@ namespace App\Models;
 final class Order
 {
     public function __construct(
-        public readonly string $orderNumber,
-        public readonly string $status,
-        public readonly ?string $partnerOrderRef,
-        public readonly string $attractionId,
-        public readonly string $productId,
-        public readonly int $quantity,
-        public readonly ?float $priceTotal,
-        public readonly ?string $currency,
-        public readonly string $guestName,
-        public readonly ?string $guestEmail,
-        public readonly ?string $eventDate,
-        public readonly ?string $orderDate,
-        public readonly array $lines,
-        public readonly array $tickets,
-        public readonly array $vouchers,
-        public readonly ?array $cancellation,
-        public readonly ?string $env
+        public string $orderNumber,
+        public string $status,
+        public ?string $partnerOrderRef,
+        public string $attractionId,
+        public string $productId,
+        public int $quantity,
+        public ?float $priceTotal,
+        public ?string $currency,
+        public string $guestName,
+        public ?string $guestEmail,
+        public ?string $eventDate,
+        public ?string $orderDate,
+        public array $lines,
+        public array $tickets,
+        public array $vouchers,
+        public ?array $cancellation,
+        public ?string $env
     ) {
     }
 

@@ -68,11 +68,19 @@ final class AttractionsController
                 $rows[] = ['name' => $a->name, 'place' => $a->place(), 'url' => $a->path(), 'image' => $a->heroImageUrl ?? $a->logoUrl, 'price' => $a->startingPrice];
             }
         }
-        return Response::text(json_encode(['q' => $q, 'items' => $rows], JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES), 'application/json');
+        return Response::text(json_encode(['q' => $q, 'items' => $rows], JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP), 'application/json');
+    }
+
+    private static function requireId(string $id): void
+    {
+        if (preg_match('/^[0-9a-f]{24}$/', $id) !== 1) {
+            throw new \App\Support\NotFoundException('Unknown id.');
+        }
     }
 
     public function show(string $id, string $slug): Response
     {
+        self::requireId($id);
         $attraction = $this->api->attraction($id);
         $canonical = $attraction->path();
         if ($canonical !== '/attractions/' . rawurlencode($id) . '/' . $slug) {
@@ -96,6 +104,8 @@ final class AttractionsController
 
     public function product(string $id, string $slug, string $productId): Response
     {
+        self::requireId($id);
+        self::requireId($productId);
         $attraction = $this->api->attraction($id);
         $product = $this->api->product($productId);
         $path = $product->path($attraction);
