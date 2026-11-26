@@ -74,6 +74,8 @@ Needs PHP 8.0 or newer with curl, json, mbstring and openssl (all standard). MyS
 5. Open `/admin/status` (System). Fix every red row, then press "Run sync". It loads the catalog in small steps and works inside short time limits.
 6. Keep the catalog fresh. With cron: `php /home/USER/public_html/bin/sync.php --updates` every 10 minutes and `php /home/USER/public_html/bin/sync.php --all` once a night. Without cron: set a "Web cron key" on the settings page and have a free cron service call `https://your-site/cron/updates?key=YOUR_KEY` every 10 minutes and `https://your-site/cron/sync?key=YOUR_KEY` every 15 minutes. The second URL only does work when a daily full sync is due or one is still in progress; otherwise it answers `skipped`. Add `&force=1` to run a full sync now.
 
+Hestia, cPanel with nginx and other nginx-in-front hosts serve files with static extensions straight from nginx, which ignores `.htaccess`. The app keeps its data in `.json` files under `storage/`, so on such hosts remove `json` from the domain's proxy (static) extensions, or add a rule denying `/storage/`. After deploying, check that `https://your-site/storage/settings.json` answers 403; the System page's exposure checks do the same test.
+
 Security notes. The root `.htaccess` sends every request to `public/` and blocks `src`, `config`, `storage`, `bin`, `lib`, `views` and `logs`; each of those folders also has its own deny file. The System page tests this from the server. On nginx send every request that is not a file to `public/index.php` and deny those folders. Never put the API key in a file inside `public/`.
 
 ## API guide coverage
