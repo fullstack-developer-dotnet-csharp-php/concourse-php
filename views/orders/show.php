@@ -33,6 +33,26 @@
         </div>
         <p><strong>Total: <?= e(money($order->priceTotal, $order->currency)) ?></strong></p>
 
+        <?php if ($order->items !== []): ?>
+            <h2>Items in this order</h2>
+            <div class="table-wrap">
+                <table class="table">
+                    <thead><tr><th>Product</th><th>Status</th><th>Qty</th><th>Total</th><th>Detail</th></tr></thead>
+                    <tbody>
+                    <?php foreach ($order->items as $it): ?>
+                        <tr>
+                            <td><?= e($it['productId'] ?? '') ?></td>
+                            <td><span class="badge badge-<?= e($it['status'] ?? '') ?>"><?= e($it['status'] ?? '') ?></span></td>
+                            <td><?= e($it['quantity'] ?? '') ?></td>
+                            <td><?= e(money(isset($it['priceTotal']) ? (float) $it['priceTotal'] : null, $order->currency)) ?></td>
+                            <td><?= e(($it['error']['message'] ?? '') !== '' ? ($it['error']['code'] ?? '') . ': ' . $it['error']['message'] : (isset($it['eventDate']) ? 'Visit ' . substr((string) $it['eventDate'], 0, 10) : '')) ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        <?php endif; ?>
+
         <?php if ($order->cancellation): ?>
             <h2>Cancellation</h2>
             <dl class="facts">
@@ -53,7 +73,7 @@
                 <a class="btn btn-ghost btn-block" href="/orders/<?= e(rawurlencode($order->orderNumber)) ?>/voucher">Open voucher</a>
                 <a class="btn btn-ghost btn-block" href="/orders/<?= e(rawurlencode($order->orderNumber)) ?>/voucher?format=pdf">Download PDF</a>
             <?php endif; ?>
-            <?php if (!$order->isCancelled()): ?>
+            <?php if ($order->canCancel()): ?>
                 <h3>Cancel order</h3>
                 <form action="/orders/<?= e(rawurlencode($order->orderNumber)) ?>/cancel" method="post" data-confirm="Cancel this order?">
                     <?= App\Support\Csrf::field() ?>

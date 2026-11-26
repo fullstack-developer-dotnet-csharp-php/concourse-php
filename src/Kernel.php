@@ -98,6 +98,7 @@ final class Kernel
         $r->add('GET', '/', fn() => $home->index());
         $r->add('GET', '/attractions', fn() => $attractions->index());
         $r->add('GET', '/suggest', fn() => $attractions->suggest());
+        $r->add('GET', '/api/question-values/{id}/{productId}/{key}', fn(string $id, string $productId, string $key) => $attractions->questionValues($id, $productId, $key));
         $r->add('GET', '/attractions/{id}/{slug}',fn(string $id, string $slug) => $attractions->show($id, $slug));
         $r->add('GET', '/attractions/{id}/{slug}/tickets/{productId}', fn(string $id, string $slug, string $productId) => $attractions->product($id, $slug, $productId));
         $r->add('POST', '/book/{id}/{productId}', fn(string $id, string $productId) => $booking->book($id, $productId));
@@ -119,6 +120,7 @@ final class Kernel
         $r->add('GET', '/admin/status', fn() => $admin->status());
         $r->add('POST', '/admin/sync', fn() => $admin->sync());
         $r->add('GET', '/cron/sync', fn() => (new CronController())->sync());
+        $r->add('GET', '/cron/updates', fn() => (new CronController())->updates());
         $r->add('GET', '/admin/logs', fn() => $admin->logs());
         $r->add('GET', '/admin/logs/{name}', fn(string $name) => $admin->logDownload($name));
         $r->add('POST', '/admin/logs/{name}/delete', fn(string $name) => $admin->logDelete($name));
@@ -150,6 +152,17 @@ final class Kernel
     private static function customerMessage(Throwable $e): string
     {
         if ($e instanceof ApiException) {
+            $byCode = [
+                'SOLD_OUT' => 'Those tickets are no longer available for the date you chose. Please go back, pick another date or fewer tickets, and try again.',
+                'IDEMPOTENCY_IN_FLIGHT' => 'Your booking is already being processed. Please wait a moment, then check your order before trying again.',
+                'IDEMPOTENCY_CONFLICT' => 'This booking form was already used for a different selection. Please go back and start the booking again.',
+                'NOT_BOOKABLE' => 'This ticket cannot be booked online.',
+                'NOT_SUPPORTED' => 'This ticket does not support that request.',
+                'VALIDATION_ERROR' => 'Some booking details are missing or not valid. Please go back, check the form and try again.',
+            ];
+            if (isset($byCode[$e->errorCode])) {
+                return $byCode[$e->errorCode];
+            }
             return $e->status === 0 || $e->status === 429 || $e->status >= 500
                 ? 'Our ticket supplier is not responding right now. Please try again in a few minutes.'
                 : 'We could not complete this request with our ticket supplier. Please check your details and try again.';

@@ -168,3 +168,8 @@ a { color: var(--brand); }
 @media (max-width: 900px) {
     .layout-main, .layout-sidebar { grid-template-columns: minmax(0, 1fr); }
 }
+
+.notice.info { background: color-mix(in srgb, var(--brand) 10%, var(--surface)); color: var(--text); border: 1px solid color-mix(in srgb, var(--brand) 30%, var(--line)); }
+.notice-card { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); padding: 22px 24px; margin-top: 24px; border-left: 5px solid var(--accent); }
+.notice-card h2 { margin-top: 0; font-size: 1.25rem; }
+.notice-card p { max-width: 62ch; }

@@ -30,6 +30,9 @@
 
         <section aria-labelledby="tix-h" id="tickets">
             <h2 id="tix-h">Tickets and experiences</h2>
+            <?php if (isset($inline)): ?>
+                <?= App\Support\View::partial('booking', get_defined_vars()) ?>
+            <?php else: ?>
             <?php if (!array_filter($products, static fn($p) => $p->bookable)): ?>
                 <p class="muted">No tickets are listed for this attraction.</p>
             <?php endif; ?>
@@ -51,6 +54,7 @@
                     </li>
                 <?php endforeach; ?>
             </ul>
+            <?php endif; ?>
         </section>
 
         <?php if ($attraction->goodToKnow !== []): ?>

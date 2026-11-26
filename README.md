@@ -51,7 +51,7 @@ Attractions are stored locally and refreshed by a sync, so pages and search do n
 
 Load or refresh the catalog with `php bin/sync.php --all` (all pages in one go) or `php bin/sync.php` (5 pages per run, resumes where it stopped, for hosts with short time limits). Run it from cron to keep content fresh.
 
-Incremental refresh: `php bin/sync.php --updates` reads the supplier feed `GET /content/updates`, re-fetches only the attractions that changed (and removes deleted ones), and saves the feed cursor in the catalog meta. It starts from the time of the last full sync, so run `--all` once first. Run it from cron every few minutes. The feed's query parameter is sent as `cursor` (the response field is `nextCursor`); the staging API currently answers 404 for this feed, in which case the command prints the API error and exits with code 1. Keep the periodic full sync as well, because it is what removes attractions the feed missed.
+Incremental refresh: `php bin/sync.php --updates` reads the supplier change feed `GET /v1/events?after=<sequence>&limit=100` (the API documentation's catalogue change feed), re-fetches only the attractions whose attraction or products changed, and saves the sequence number in the catalog meta. Run `--all` once first; that records where the feed starts. If the feed answers `410 EVENTS_CURSOR_EXPIRED` the cursor is cleared and the command asks for a full sync. The same refresh is available to a web cron as `GET /cron/updates?key=YOUR_CRON_KEY` (JSON reply). Recommended schedule, following the API guide (content is safe to mirror, re-sync daily): `--updates` or `/cron/updates` every 5 to 15 minutes, and one full sync a day. Prices, availability and orders are never synced; they are read live.
 
 SleekDB 2.15 (MIT) is bundled in `lib/SleekDB`; see `lib/SleekDB/SOURCE.txt` for the two small compatibility edits.
 
@@ -72,9 +72,22 @@ Needs PHP 8.0 or newer with curl, json, mbstring and openssl (all standard). MyS
 3. Open `https://your-site/admin`. The first visit asks for the setup token: open `storage/setup-token.txt` with the file manager, paste the token and choose an admin password (10 characters or more).
 4. On `/admin/settings` enter the public URL (`https://your-site`), the FunEx API key and, for payments, the Cashfree keys. For MySQL fill in the database details from the hosting panel and pick MySQL as the storage driver. Use the test buttons.
 5. Open `/admin/status` (System). Fix every red row, then press "Run sync". It loads the catalog in small steps and works inside short time limits.
-6. Keep the catalog fresh: if the host offers cron, run `php /home/USER/public_html/bin/sync.php` every few hours. If it does not, set a "Web cron key" on the settings page and have a free cron service call `https://your-site/cron/sync?key=YOUR_KEY` every 15 minutes.
+6. Keep the catalog fresh. With cron: `php /home/USER/public_html/bin/sync.php --updates` every 10 minutes and `php /home/USER/public_html/bin/sync.php --all` once a night. Without cron: set a "Web cron key" on the settings page and have a free cron service call `https://your-site/cron/updates?key=YOUR_KEY` every 10 minutes and `https://your-site/cron/sync?key=YOUR_KEY` every 15 minutes. The second URL only does work when a daily full sync is due or one is still in progress; otherwise it answers `skipped`. Add `&force=1` to run a full sync now.
 
 Security notes. The root `.htaccess` sends every request to `public/` and blocks `src`, `config`, `storage`, `bin`, `lib`, `views` and `logs`; each of those folders also has its own deny file. The System page tests this from the server. On nginx send every request that is not a file to `public/index.php` and deny those folders. Never put the API key in a file inside `public/`.
+
+## API guide coverage
+
+The app follows the FunEx Concourse developer guide (`api-1.json`):
+
+- Catalogue: `GET /v1/attractions` (`q`, `near`, paging), attraction and product detail, `images[].role` (logo, card and mobile banner images are not shown in galleries), `contentVersion`, `goodToKnow`.
+- Change feed: `GET /v1/events` (see the sync notes above). Content is mirrored locally; prices, availability and orders are always read live.
+- Availability: the API caps a window at 30 days, so calendars ask one month at a time and the "next available date" lookahead walks consecutive 30 day windows.
+- Checkout is built from each offer's `bookingContract`: traveller fields, question types, fixed options, `maxLength`, `units`, conditional questions (`showWhen`) and lookup questions (`valuesFrom: lookup`, searched through `GET /api/question-values/...`, which calls `GET .../questions/{key}/values`).
+- Purchase uses an `Idempotency-Key`. Calls that are safe to repeat (all reads, and purchases that carry a key) are retried up to twice on a network failure, `429` (waiting `Retry-After`, at most 5 seconds), `502`, `503` or `504`.
+- Orders: all statuses (`confirmed`, `pending`, `partial`, `cancelled`, `refund_requested`, `refunded`, `failed`) are shown, `items[]` of multi-product orders are listed, and the cancel button only appears for `confirmed` and `partial`.
+- Search near a place: the attractions page has a "Show attractions near me" button that calls `GET /v1/attractions?near=lat,lng`.
+- Not built: a cart for `POST /v1/attractions/{id}/orders` (multi-product orders). The API method `Concourse::purchaseMany()` exists for it.
 
 ## Logs manager
 

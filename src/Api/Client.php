@@ -86,12 +86,21 @@ final class Client
             curl_setopt($ch, CURLOPT_POSTFIELDS, $body);
         }
         $t = microtime(true);
-        $payload = curl_exec($ch);
-        if ($payload === false && ($method === 'GET' || $idempotencyKey !== null)) {
-            Log::warning('API network error, retrying once', ['method' => $method, 'url' => $url, 'error' => curl_error($ch)]);
-            usleep(400000);
+        $retryable = $method === 'GET' || $idempotencyKey !== null;
+        $attempt = 0;
+        do {
+            $responseHeaders = [];
             $payload = curl_exec($ch);
-        }
+            $status = $payload === false ? 0 : (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+            $transient = $payload === false || $status === 429 || $status === 502 || $status === 503 || $status === 504;
+            if (!$retryable || !$transient || $attempt >= 2) {
+                break;
+            }
+            $wait = $status === 429 && isset($responseHeaders['retry-after']) ? min(5, max(1, (int) $responseHeaders['retry-after'])) : 0.4 * ($attempt + 1);
+            Log::warning('API call failed, retrying with the same request', ['method' => $method, 'url' => $url, 'status' => $status, 'error' => $payload === false ? curl_error($ch) : '', 'waitSeconds' => $wait, 'attempt' => $attempt + 1]);
+            usleep((int) ($wait * 1000000));
+            $attempt++;
+        } while (true);
         $millis = (microtime(true) - $t) * 1000;
         if ($payload === false) {
             $error = curl_error($ch);

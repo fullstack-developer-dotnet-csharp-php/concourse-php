@@ -15,9 +15,9 @@ final class Concourse
     {
     }
 
-    public function attractionsPage(int $page, int $pageSize, ?string $q = null, bool $fresh = false): array
+    public function attractionsPage(int $page, int $pageSize, ?string $q = null, bool $fresh = false, ?string $near = null): array
     {
-        $data = $this->client->get('/attractions', ['page' => $page, 'pageSize' => $pageSize, 'q' => $q], $fresh ? 0 : Config::int('cache.ttl.catalog'));
+        $data = $this->client->get('/attractions', ['page' => $page, 'pageSize' => $pageSize, 'q' => $q, 'near' => $near], $fresh ? 0 : Config::int('cache.ttl.catalog'));
         return [
             'items' => array_map(static fn(array $a) => Attraction::fromArray($a), $data['items'] ?? []),
             'total' => (int) ($data['total'] ?? 0),
@@ -31,10 +31,10 @@ final class Concourse
         return Attraction::fromArray($this->client->get('/attractions/' . rawurlencode($id), [], $fresh ? 0 : Config::int('cache.ttl.detail')));
     }
 
-    public function contentUpdates(?string $cursor): array
+    public function events(?int $after, int $limit): array
     {
-        $data = $this->client->get('/content/updates', ['cursor' => $cursor], 0);
-        return ['items' => $data['items'] ?? [], 'nextCursor' => isset($data['nextCursor']) ? (string) $data['nextCursor'] : null];
+        $data = $this->client->get('/events', ['after' => $after, 'limit' => $limit], 0);
+        return ['events' => $data['events'] ?? [], 'nextAfter' => (int) ($data['nextAfter'] ?? ($after ?? 0)), 'hasMore' => (bool) ($data['hasMore'] ?? false)];
     }
 
     public function products(string $attractionId): array
@@ -61,6 +61,20 @@ final class Concourse
     public function purchase(string $attractionId, string $productId, array $body, string $idempotencyKey): Order
     {
         return Order::fromArray($this->client->post($this->productPath($attractionId, $productId) . '/purchase', $body, $idempotencyKey));
+    }
+
+    public function purchaseMany(string $attractionId, array $body, string $idempotencyKey): Order
+    {
+        return Order::fromArray($this->client->post('/attractions/' . rawurlencode($attractionId) . '/orders', $body, $idempotencyKey));
+    }
+
+    public function questionValues(string $attractionId, string $productId, string $key, string $q, int $limit, array $answers): array
+    {
+        $query = ['q' => $q, 'limit' => $limit];
+        foreach ($answers as $k => $v) {
+            $query['answer.' . $k] = $v;
+        }
+        return $this->client->get($this->productPath($attractionId, $productId) . '/questions/' . rawurlencode($key) . '/values', $query, 0);
     }
 
     public function orders(int $limit): array

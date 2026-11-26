@@ -1,7 +1,7 @@
 <?php
 $list = [];
 foreach ($images as $img) {
-    if (!empty($img['url'])) {
+    if (!empty($img['url']) && !in_array($img['role'] ?? null, ['logo', 'card', 'banner-mobile'], true)) {
         $list[] = ['url' => (string) $img['url'], 'alt' => ($img['alt'] ?? '') !== '' ? (string) $img['alt'] : $name, 'caption' => (string) ($img['caption'] ?? '')];
     }
 }
