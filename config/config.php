@@ -8,7 +8,7 @@ $config = [
         'timeout' => 60,
     ],
     'site' => [
-        'name' => 'FunEx Tickets',
+        'name' => 'Company Name',
         'tagline' => 'Attraction tickets, tours and city passes',
         'public_url' => '',
         'locale' => 'en_US',

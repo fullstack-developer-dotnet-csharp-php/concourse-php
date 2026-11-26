@@ -1,4 +1,4 @@
-# FunEx Tickets (PHP)
+# Company Name (PHP)
 
 Server-rendered PHP 8.0+ site over the FunEx Concourse staging API: attraction browsing, dated calendar, booking, orders.
 
