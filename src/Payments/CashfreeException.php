@@ -7,7 +7,7 @@ use RuntimeException;
 
 final class CashfreeException extends RuntimeException
 {
-    public function __construct(public readonly int $status, public readonly string $errorCode, string $message)
+    public function __construct(public int $status, public string $errorCode, string $message)
     {
         parent::__construct($message, $status);
     }

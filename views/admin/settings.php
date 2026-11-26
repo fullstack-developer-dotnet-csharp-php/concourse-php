@@ -40,8 +40,10 @@ $tests = ['FunEx Concourse API' => 'api', 'Catalog storage' => 'store', 'Payment
                                 </select>
                             <?php elseif ($type === 'secret'): ?>
                                 <input id="<?= e($id) ?>" type="password" name="s[<?= e($path) ?>]" value="" autocomplete="new-password" placeholder="<?= Config::string($path) !== '' ? 'Saved (leave blank to keep)' : 'Not set' ?>">
+                            <?php elseif ($type === 'textarea'): ?>
+                                <textarea id="<?= e($id) ?>" name="s[<?= e($path) ?>]" rows="10" maxlength="20000" placeholder="Leave blank to use the built-in template"><?= e($value($path)) ?></textarea>
                             <?php else: ?>
-                                <input id="<?= e($id) ?>" type="<?= $type === 'int' ? 'number' : ($type === 'url' ? 'url' : 'text') ?>" name="s[<?= e($path) ?>]" value="<?= e($value($path)) ?>"<?= $type === 'int' ? ' min="' . e($f[4]) . '" max="' . e($f[5]) . '"' : '' ?>>
+                                <input id="<?= e($id) ?>" type="<?= $type === 'int' ? 'number' : ($type === 'url' ? 'url' : 'text') ?>" name="s[<?= e($path) ?>]" value="<?= e($value($path)) ?>"<?= $type === 'int' ? 'number' : ($type === 'url' ? 'url' : 'text') ?>" name="s[<?= e($path) ?>]" value="<?= e($value($path)) ?>"<?= $type === 'int' ? ' min="' . e($f[4]) . '" max="' . e($f[5]) . '"' : '' ?>>
                             <?php endif; ?>
                         <?php endif; ?>
                         <?php if ($help !== ''): ?><p class="help"><?= e($help) ?></p><?php endif; ?>

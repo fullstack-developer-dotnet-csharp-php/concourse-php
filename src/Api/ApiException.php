@@ -8,12 +8,12 @@ use RuntimeException;
 final class ApiException extends RuntimeException
 {
     public function __construct(
-        public readonly int $status,
-        public readonly string $errorCode,
+        public int $status,
+        public string $errorCode,
         string $message,
-        public readonly string $url,
-        public readonly string $body = '',
-        public readonly ?int $retryAfter = null
+        public string $url,
+        public string $body = '',
+        public ?int $retryAfter = null
     ) {
         parent::__construct($message, $status);
     }

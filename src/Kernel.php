@@ -8,7 +8,9 @@ use App\Api\Client;
 use App\Controllers\AdminController;
 use App\Controllers\AttractionsController;
 use App\Controllers\BookingController;
+use App\Controllers\CronController;
 use App\Controllers\HomeController;
+use App\Controllers\LegalController;
 use App\Controllers\OrdersController;
 use App\Controllers\PaymentController;
 use App\Controllers\SeoController;
@@ -17,6 +19,7 @@ use App\Services\Catalog;
 use App\Services\Concourse;
 use App\Store\StoreFactory;
 use App\Support\Admin;
+use App\Support\CatalogEmptyException;
 use App\Support\Config;
 use App\Support\ForbiddenException;
 use App\Support\NotFoundException;
@@ -48,6 +51,12 @@ final class Kernel
                 Log::exception($e, 'API error while serving ' . $path);
             }
             $response = $notFound ? self::notFound($path, $e) : self::error($e);
+        } catch (CatalogEmptyException $e) {
+            Log::warning('Catalog is empty', ['path' => $path]);
+            $seo = Seo::current();
+            $seo->title = 'Catalog is being prepared';
+            $seo->noindex = true;
+            $response = Response::html(View::render('errors/catalog_empty', ['admin' => Admin::isLoggedIn()]), 503);
         } catch (ForbiddenException $e) {
             Log::warning('Forbidden: ' . $path, ['reason' => $e->getMessage()]);
             $response = self::error($e);
@@ -107,6 +116,9 @@ final class Kernel
         $r->add('POST', '/admin/logout', fn() => $admin->logout());
         $r->add('GET', '/admin/settings', fn() => $admin->settings());
         $r->add('POST', '/admin/settings', fn() => $admin->save());
+        $r->add('GET', '/admin/status', fn() => $admin->status());
+        $r->add('POST', '/admin/sync', fn() => $admin->sync());
+        $r->add('GET', '/cron/sync', fn() => (new CronController())->sync());
         $r->add('GET', '/admin/logs', fn() => $admin->logs());
         $r->add('GET', '/admin/logs/{name}', fn(string $name) => $admin->logDownload($name));
         $r->add('POST', '/admin/logs/{name}/delete', fn(string $name) => $admin->logDelete($name));
@@ -116,6 +128,10 @@ final class Kernel
         $r->add('GET', '/pay/result/{id}', fn(string $id) => $payments->result($id));
         $r->add('GET', '/pay/result/{id}/voucher', fn(string $id) => $payments->voucher($id));
         $r->add('POST', '/pay/webhook', fn() => $payments->webhook());
+        $legal = new LegalController();
+        $r->add('GET', '/terms', fn() => $legal->show('terms'));
+        $r->add('GET', '/privacy', fn() => $legal->show('privacy'));
+        $r->add('GET', '/refunds', fn() => $legal->show('refunds'));
         $r->add('GET', '/favicon.ico', fn() => Response::redirect('/assets/favicon.svg', 301));
         $r->add('GET', '/sitemap.xml', fn() => $seo->sitemap());
         $r->add('GET', '/robots.txt', fn() => $seo->robots());

@@ -1,10 +1,10 @@
 # FunEx Tickets (PHP)
 
-Server-rendered PHP 8.2+ site over the FunEx Concourse staging API: attraction browsing, dated calendar, booking, orders.
+Server-rendered PHP 8.0+ site over the FunEx Concourse staging API: attraction browsing, dated calendar, booking, orders.
 
 ## Run
 
-    C:\Users\SIVA\tools\php\php.exe bin\warm-cache.php
+    C:\Users\SIVA\tools\php\php.exe bin\sync.php --all
     run.bat
 
 Open http://localhost:8080. Output is logged to `logs\output.log`.
@@ -63,14 +63,18 @@ Cashfree: enter the App ID and Secret key, pick sandbox or production, and turn 
 
 Order pages (`/orders`) now require the admin login.
 
-## Install on a server
+## Install on shared hosting (GoDaddy, Hostinger and similar)
 
-1. Upload the folder to a host with PHP 8.2+ (extensions: curl, json, mbstring, openssl; pdo_mysql only for MySQL storage).
-2. Point the web root at `public/`. On Apache without access to the vhost, the root `.htaccess` forwards to `public/` and blocks `src`, `config`, `storage`, `bin`, `lib`, `views` and `logs`. On nginx send every request that is not a file to `public/index.php`.
-3. Make `storage/` writable by the web user.
-4. Run `php bin/check.php`. It lists every missing requirement.
-5. Open `/admin/setup`, paste the token from `storage/setup-token.txt`, set the admin password, then fill in `/admin/settings` (API key, public URL, Cashfree keys).
-6. Run `php bin/sync.php --all`, then add it to cron for refreshes.
+Needs PHP 8.0 or newer with curl, json, mbstring and openssl (all standard). MySQL is optional; without it the catalog is stored in JSON files (SleekDB). No Composer, no SSH and no cron are required.
+
+1. In the hosting panel pick PHP 8.0 or newer ("Select PHP Version" or "PHP Configuration") and turn on the free SSL certificate.
+2. Upload the contents of the zip to the web folder (`public_html`) with the file manager or FTP. Install on a domain or sub-domain root, not in a sub-folder. Hidden files such as `.htaccess` must be uploaded too.
+3. Open `https://your-site/admin`. The first visit asks for the setup token: open `storage/setup-token.txt` with the file manager, paste the token and choose an admin password (10 characters or more).
+4. On `/admin/settings` enter the public URL (`https://your-site`), the FunEx API key and, for payments, the Cashfree keys. For MySQL fill in the database details from the hosting panel and pick MySQL as the storage driver. Use the test buttons.
+5. Open `/admin/status` (System). Fix every red row, then press "Run sync". It loads the catalog in small steps and works inside short time limits.
+6. Keep the catalog fresh: if the host offers cron, run `php /home/USER/public_html/bin/sync.php` every few hours. If it does not, set a "Web cron key" on the settings page and have a free cron service call `https://your-site/cron/sync?key=YOUR_KEY` every 15 minutes.
+
+Security notes. The root `.htaccess` sends every request to `public/` and blocks `src`, `config`, `storage`, `bin`, `lib`, `views` and `logs`; each of those folders also has its own deny file. The System page tests this from the server. On nginx send every request that is not a file to `public/index.php` and deny those folders. Never put the API key in a file inside `public/`.
 
 ## Logs manager
 

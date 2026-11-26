@@ -6,9 +6,9 @@ namespace App\Support;
 final class Response
 {
     public function __construct(
-        public readonly int $status,
-        public readonly string $body,
-        public readonly array $headers = []
+        public int $status,
+        public string $body,
+        public array $headers = []
     ) {
     }
 

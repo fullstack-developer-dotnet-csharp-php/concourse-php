@@ -3,8 +3,10 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Api\ApiException;
 use App\Services\Concourse;
 use App\Support\Csrf;
+use App\Support\Log;
 use App\Support\Response;
 use App\Support\Seo;
 use App\Support\View;
@@ -32,7 +34,17 @@ final class OrdersController
     {
         Csrf::verify();
         $reason = input($_POST, 'reason');
-        $this->api->cancel($number, $reason !== '' ? $reason : null);
+        try {
+            $this->api->cancel($number, $reason !== '' ? $reason : null);
+        } catch (ApiException $e) {
+            if ($e->status !== 409) {
+                throw $e;
+            }
+            Log::warning('Order could not be cancelled', ['order' => $number, 'api' => $e->getMessage()]);
+            $order = $this->api->order($number);
+            $this->seo('Order ' . $order->orderNumber);
+            return Response::html(View::render('orders/show', ['order' => $order, 'cancelError' => $e->getMessage()]), 409);
+        }
         return Response::redirect('/orders/' . rawurlencode($number));
     }
 

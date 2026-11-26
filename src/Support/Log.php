@@ -8,7 +8,7 @@ use Throwable;
 final class Log
 {
     private const LEVELS = ['debug' => 100, 'info' => 200, 'notice' => 250, 'warning' => 300, 'error' => 400, 'critical' => 500];
-    private const SENSITIVE = '/authorization|api[-_]?key|token|password|passwd|secret|cookie|idempotency|card|cvv|iban|email|phone|dob|birth|firstname|lastname|first_name|last_name|guest|traveller|answers/i';
+    private const SENSITIVE = '/authorization|api[-_]?key|token|password|passwd|secret|cookie|idempotency|card|cvv|iban|email|phone|dob|birth|firstname|lastname|first_name|last_name|guest|traveller|answers|^key$/i';
 
     private static string $dir = '';
     private static int $min = 200;
@@ -167,7 +167,7 @@ final class Log
 
     public static function requestStart(): void
     {
-        self::write('info', 'Request started ' . ($_SERVER['REQUEST_METHOD'] ?? 'CLI') . ' ' . ($_SERVER['REQUEST_URI'] ?? ''), [
+        self::write('info', 'Request started ' . ($_SERVER['REQUEST_METHOD'] ?? 'CLI') . ' ' . (string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH), [
             'ip' => $_SERVER['REMOTE_ADDR'] ?? null,
             'agent' => $_SERVER['HTTP_USER_AGENT'] ?? null,
             'referer' => $_SERVER['HTTP_REFERER'] ?? null,

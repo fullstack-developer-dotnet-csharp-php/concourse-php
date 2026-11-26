@@ -6,33 +6,34 @@ namespace App\Models;
 final class Attraction
 {
     public function __construct(
-        public readonly string $id,
-        public readonly string $name,
-        public readonly string $slug,
-        public readonly ?string $summary,
-        public readonly ?string $promotionText,
-        public readonly ?string $heroImageUrl,
-        public readonly ?string $logoUrl,
-        public readonly ?string $city,
-        public readonly ?string $country,
-        public readonly array $categories,
-        public readonly ?float $startingPrice,
-        public readonly bool $bookable,
-        public readonly ?string $updatedAt,
-        public readonly ?string $seoTitle = null,
-        public readonly ?string $descriptionHtml = null,
-        public readonly ?string $notice = null,
-        public readonly array $highlights = [],
-        public readonly array $images = [],
-        public readonly array $locations = [],
-        public readonly array $faq = [],
-        public readonly array $goodToKnow = []
+        public string $id,
+        public string $name,
+        public string $slug,
+        public ?string $summary,
+        public ?string $promotionText,
+        public ?string $heroImageUrl,
+        public ?string $logoUrl,
+        public ?string $city,
+        public ?string $country,
+        public array $categories,
+        public ?float $startingPrice,
+        public bool $bookable,
+        public ?string $updatedAt,
+        public ?string $seoTitle = null,
+        public ?string $descriptionHtml = null,
+        public ?string $notice = null,
+        public array $highlights = [],
+        public array $images = [],
+        public array $locations = [],
+        public array $faq = [],
+        public array $goodToKnow = [],
+        public ?string $contentVersion = null
     ) {
     }
 
     public static function fromArray(array $a): self
     {
-        $images = $a['images'] ?? [];
+        $images = sort_images($a['images'] ?? []);
         $hero = $a['heroImageUrl'] ?? ($images[0]['url'] ?? null);
         return new self(
             (string) $a['id'],
@@ -55,7 +56,8 @@ final class Attraction
             $images,
             $a['locations'] ?? [],
             $a['faq'] ?? [],
-            array_values($a['goodToKnow'] ?? [])
+            array_values($a['goodToKnow'] ?? []),
+            isset($a['contentVersion']) ? (string) $a['contentVersion'] : null
         );
     }
 

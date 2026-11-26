@@ -38,8 +38,19 @@ $bookingData = ['currency' => $currency, 'needsEvent' => $needsEvent, 'offers' =
         <?php if ($product->cancellable() === true): ?> &middot; Cancellable<?php elseif ($product->cancellable() === false): ?> &middot; Non-cancellable<?php endif; ?></p>
 </div>
 
-<div class="container layout-main">
+<div class="container layout-main"<?= $product->contentVersion !== null ? ' data-content-version="' . e($product->contentVersion) . '"' : '' ?>>
     <div class="content">
+<?php if (count($product->images) > 1): ?>
+            <section class="gallery" aria-label="Photos">
+                <?php foreach (array_slice($product->images, 1) as $img): ?>
+                    <figure>
+                        <img src="<?= e($img['url'] ?? '') ?>" alt="<?= e(($img['alt'] ?? '') !== '' ? $img['alt'] : $product->name) ?>" width="400" height="260" loading="lazy">
+                        <?php if (($img['caption'] ?? '') !== ''): ?><figcaption><?= e($img['caption']) ?></figcaption><?php endif; ?>
+                    </figure>
+                <?php endforeach; ?>
+            </section>
+        <?php endif; ?>
+
         <?php if ($product->description): ?><div class="prose"><?= Html::clean($product->description) ?></div><?php endif; ?>
 
         <?php if ($product->details !== []): ?>
@@ -122,6 +133,9 @@ $bookingData = ['currency' => $currency, 'needsEvent' => $needsEvent, 'offers' =
                     <div id="travellers"></div>
                 </section>
 
+                <?php $policies = App\Support\Legal::available(); if ($policies): ?>
+                <p class="agree"><label class="check"><input type="checkbox" name="agree" value="1" required> I agree to the <?php $n = 0; foreach ($policies as $slug => $title): ?><?= $n++ > 0 ? ', ' : '' ?><a href="/<?= e($slug) ?>" target="_blank" rel="noopener"><?= e(mb_strtolower($title)) ?></a><?php endforeach; ?>.</label></p>
+                <?php endif; ?>
                 <div class="book-bar" id="book-bar" hidden>
                     <div><span class="muted">Total</span> <strong id="total">-</strong></div>
                     <button type="submit" class="btn btn-primary"><?= Config::bool('payments.enabled') ? 'Pay and book' : 'Book now' ?></button>
@@ -146,6 +160,9 @@ $bookingData = ['currency' => $currency, 'needsEvent' => $needsEvent, 'offers' =
             <h3><?= e($attraction->name) ?></h3>
             <?php if ($attraction->heroImageUrl): ?><img src="<?= e($attraction->heroImageUrl) ?>" alt="" width="320" height="180" loading="lazy"><?php endif; ?>
             <?php foreach ($product->offers as $o): ?>
+                <?php if ($o->validFrom || $o->validTo): ?>
+                    <p class="small"><strong><?= e($o->label) ?> validity:</strong> <?= e(trim(($o->validFrom ? 'from ' . substr($o->validFrom, 0, 10) : '') . ' ' . ($o->validTo ? 'until ' . substr($o->validTo, 0, 10) : ''))) ?></p>
+                <?php endif; ?>
                 <?php if ($o->cancellationTerms || $o->cutoffMinutes): ?>
                     <p class="small"><strong><?= e($o->label) ?>:</strong> <?= e($o->cancellationTerms ?? 'Cancel up to ' . $o->cutoffMinutes . ' minutes before the visit.') ?></p>
                 <?php endif; ?>

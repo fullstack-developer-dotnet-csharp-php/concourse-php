@@ -12,10 +12,12 @@ use App\Support\Admin;
 use App\Support\Config;
 use App\Support\Csrf;
 use App\Support\FileCache;
+use App\Support\Log;
 use App\Support\LogReader;
 use App\Support\Response;
 use App\Support\Seo;
 use App\Support\Settings;
+use App\Support\SystemCheck;
 use App\Support\View;
 use Throwable;
 
@@ -121,6 +123,28 @@ final class AdminController
         return Response::redirect('/admin/logs?deleted=1');
     }
 
+    public function status(): Response
+    {
+        if ($gate = Admin::require()) {
+            return $gate;
+        }
+        return $this->page('admin/status', 'System check', ['rows' => SystemCheck::run(true)]);
+    }
+
+    public function sync(): Response
+    {
+        if ($gate = Admin::require()) {
+            return $gate;
+        }
+        Csrf::verify();
+        try {
+            return $this->json(['ok' => true] + CronController::chunk());
+        } catch (Throwable $e) {
+            Log::exception($e, 'Catalog sync from the admin page failed');
+            return $this->json(['ok' => false, 'message' => $e->getMessage()]);
+        }
+    }
+
     public function test(string $target): Response
     {
         if ($gate = Admin::require()) {
@@ -188,7 +212,7 @@ final class AdminController
 
     private function json(array $data): Response
     {
-        return Response::text(json_encode($data, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR), 'application/json');
+        return Response::text(json_encode($data, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR | JSON_HEX_TAG | JSON_HEX_AMP), 'application/json');
     }
 
     private function next(): string

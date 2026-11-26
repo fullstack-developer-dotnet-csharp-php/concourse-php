@@ -43,6 +43,16 @@ final class Settings
                 ['payments.cashfree.currency', 'Charge currency', 'text', 'Normally INR.'],
                 ['payments.fx_rate', 'Exchange rate', 'decimal', 'Used only when ticket prices are in another currency. Enter how many units of the charge currency equal 1 unit of the ticket currency, for example 1 USD = 83.50 INR. Leave blank if both currencies match; checkout is refused if they differ and this is blank.'],
             ],
+            'Hosting' => [
+                ['cron.key', 'Web cron key', 'secret', 'For hosts without cron. Call https://your-site/cron/sync?key=THIS_KEY every 15 minutes from a free cron service to keep the catalog fresh. Leave blank to keep the saved key; the URL stays disabled until a key is saved.'],
+            ],
+            'Legal pages' => [
+                ['legal.company', 'Business name', 'text', 'The legal name of the business that sells the tickets.'],
+                ['legal.email', 'Support email', 'text', 'Support email address.'],
+                ['legal.terms', 'Terms and conditions', 'textarea', 'Plain text. Start a line with ## for a heading and leave a blank line between paragraphs. Blank hides the page, its footer link and its checkout agreement.'],
+                ['legal.privacy', 'Privacy policy', 'textarea', 'Same format as above.'],
+                ['legal.refunds', 'Cancellation and refund policy', 'textarea', 'Same format as above. Supplier cancellation terms from the API are shown on each product page.'],
+            ],
             'Logging and debug' => [
                 ['log.level', 'Log level', 'select', 'Use info in production. Debug logs every cache hit.', ['debug' => 'debug', 'info' => 'info', 'notice' => 'notice', 'warning' => 'warning', 'error' => 'error']],
                 ['log.retention_days', 'Keep logs (days)', 'int', '', 1, 365],

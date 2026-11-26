@@ -8,10 +8,21 @@
     </p>
 </div>
 
-<div class="container layout-main">
+<div class="container layout-main"<?= $attraction->contentVersion !== null ? ' data-content-version="' . e($attraction->contentVersion) . '"' : '' ?>>
     <div class="content">
         <?php if ($attraction->heroImageUrl): ?>
             <img class="hero-img" src="<?= e($attraction->heroImageUrl) ?>" alt="<?= e($attraction->name) ?>" width="1200" height="630" fetchpriority="high">
+        <?php endif; ?>
+
+        <?php if (count($attraction->images) > 1): ?>
+            <section class="gallery" aria-label="Photos">
+                <?php foreach (array_slice($attraction->images, 1) as $img): ?>
+                    <figure>
+                        <img src="<?= e($img['url'] ?? '') ?>" alt="<?= e(($img['alt'] ?? '') !== '' ? $img['alt'] : $attraction->name) ?>" width="400" height="260" loading="lazy">
+                        <?php if (($img['caption'] ?? '') !== ''): ?><figcaption><?= e($img['caption']) ?></figcaption><?php endif; ?>
+                    </figure>
+                <?php endforeach; ?>
+            </section>
         <?php endif; ?>
 
         <?php if ($attraction->notice): ?><div class="notice"><?= Html::clean($attraction->notice) ?></div><?php endif; ?>
@@ -82,10 +93,11 @@
         <div class="side-card">
             <?php if ($attraction->startingPrice !== null): ?><p class="price price-lg"><small>From</small> <?= e(money($attraction->startingPrice, 'USD')) ?></p><?php endif; ?>
             <a class="btn btn-primary btn-block" href="#tickets">See tickets</a>
-            <?php $loc = $attraction->locations[0] ?? null; ?>
-            <?php if ($loc): ?>
-                <h3>Location</h3>
-                <address><?= e(implode(', ', array_filter([$loc['streetAddress'] ?? null, $loc['city'] ?? null, $loc['state'] ?? null, $loc['zip'] ?? null]))) ?></address>
+            <?php if ($attraction->locations !== []): ?>
+                <h3><?= count($attraction->locations) > 1 ? 'Locations' : 'Location' ?></h3>
+                <?php foreach ($attraction->locations as $loc): ?>
+                    <address<?= ($loc['locationId'] ?? '') !== '' ? ' id="location-' . e($loc['locationId']) . '"' : '' ?>><?= e(implode(', ', array_filter([$loc['streetAddress'] ?? null, $loc['city'] ?? null, $loc['state'] ?? null, $loc['zip'] ?? null]))) ?></address>
+                <?php endforeach; ?>
             <?php endif; ?>
         </div>
     </aside>

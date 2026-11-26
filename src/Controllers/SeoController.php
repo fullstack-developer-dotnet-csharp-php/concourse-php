@@ -18,6 +18,9 @@ final class SeoController
         $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n" . '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
         $xml .= '<url><loc>' . e(abs_url('/')) . "</loc></url>\n";
         $xml .= '<url><loc>' . e(abs_url('/attractions')) . "</loc></url>\n";
+        foreach (array_keys(\App\Support\Legal::available()) as $slug) {
+            $xml .= '<url><loc>' . e(abs_url('/' . $slug)) . "</loc></url>\n";
+        }
         foreach ($this->catalog->all() as $a) {
             $xml .= '<url><loc>' . e(abs_url($a->path())) . '</loc>';
             if ($a->updatedAt) {

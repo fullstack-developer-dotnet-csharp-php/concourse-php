@@ -6,23 +6,25 @@ namespace App\Models;
 final class Offer
 {
     public function __construct(
-        public readonly string $offerId,
-        public readonly string $label,
-        public readonly ?string $categoryLabel,
-        public readonly ?int $ageMin,
-        public readonly ?int $ageMax,
-        public readonly string $pricingMode,
-        public readonly bool $bookable,
-        public readonly ?float $price,
-        public readonly ?string $currency,
-        public readonly int $minQty,
-        public readonly ?int $maxQty,
-        public readonly string $needsEvent,
-        public readonly array $travellerFields,
-        public readonly array $questions,
-        public readonly ?bool $cancellable,
-        public readonly ?string $cancellationTerms,
-        public readonly ?int $cutoffMinutes
+        public string $offerId,
+        public string $label,
+        public ?string $categoryLabel,
+        public ?int $ageMin,
+        public ?int $ageMax,
+        public string $pricingMode,
+        public bool $bookable,
+        public ?float $price,
+        public ?string $currency,
+        public int $minQty,
+        public ?int $maxQty,
+        public string $needsEvent,
+        public array $travellerFields,
+        public array $questions,
+        public ?bool $cancellable,
+        public ?string $cancellationTerms,
+        public ?int $cutoffMinutes,
+        public ?string $validFrom = null,
+        public ?string $validTo = null
     ) {
     }
 
@@ -47,7 +49,9 @@ final class Offer
             $contract['questions'] ?? [],
             isset($cancel['cancellable']) ? (bool) $cancel['cancellable'] : null,
             $cancel['terms'] ?? null,
-            isset($cancel['cutoffMinutes']) ? (int) $cancel['cutoffMinutes'] : null
+            isset($cancel['cutoffMinutes']) ? (int) $cancel['cutoffMinutes'] : null,
+            $a['constraints']['validFrom'] ?? null,
+            $a['constraints']['validTo'] ?? null
         );
     }
 

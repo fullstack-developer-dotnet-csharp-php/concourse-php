@@ -49,6 +49,16 @@ $config = [
             'currency' => 'INR',
         ],
     ],
+    'cron' => [
+        'key' => '',
+    ],
+    'legal' => [
+        'company' => '',
+        'email' => '',
+        'terms' => '',
+        'privacy' => '',
+        'refunds' => '',
+    ],
     'log' => [
         'dir' => __DIR__ . '/../storage/logs',
         'level' => 'debug',

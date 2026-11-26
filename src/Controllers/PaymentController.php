@@ -37,6 +37,9 @@ final class PaymentController
         if ($id === '') {
             throw new NotFoundException('The payment return link has no order reference.');
         }
+        if ($this->gateway->pending()->get($id) === null) {
+            throw new NotFoundException('Unknown payment reference.');
+        }
         $this->gateway->checkout()->finalize($id);
         return Response::redirect('/pay/result/' . rawurlencode($id));
     }

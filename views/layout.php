@@ -84,6 +84,7 @@ $canonical = $seo->canonical !== '' ? $seo->canonical : '';
         </div>
         <ul>
             <li><a href="/attractions">All attractions</a></li>
+            <?php foreach (App\Support\Legal::available() as $slug => $title): ?><li><a href="/<?= e($slug) ?>"><?= e($title) ?></a></li><?php endforeach; ?>
             <li><a href="/sitemap.xml">Sitemap</a></li>
             <li><a href="/llms.txt">For AI assistants</a></li>
         </ul>

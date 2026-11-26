@@ -6,6 +6,7 @@
 </div>
 <div class="container layout-main">
     <div class="content">
+        <?php if (!empty($cancelError)): ?><div class="notice error" role="alert">This order was not cancelled. <?= e($cancelError) ?></div><?php endif; ?>
         <dl class="facts">
             <dt>Guest</dt><dd><?= e($order->guestName) ?><?= $order->guestEmail ? ' (' . e($order->guestEmail) . ')' : '' ?></dd>
             <dt>Ordered</dt><dd><?= e($order->orderDate) ?></dd>
@@ -38,7 +39,7 @@
                 <dt>Requested</dt><dd><?= e($order->cancellation['requestedAt'] ?? '') ?></dd>
                 <dt>Completed</dt><dd><?= e($order->cancellation['completedAt'] ?? 'Pending') ?></dd>
                 <dt>Reason</dt><dd><?= e($order->cancellation['reason'] ?? '') ?></dd>
-                <dt>Refund</dt><dd><?= isset($order->cancellation['refundAmount']) ? e(money((float) $order->cancellation['refundAmount'], $order->currency)) : 'not available' ?></dd>
+                <dt>Refund</dt><dd><?= isset($order->cancellation['refundAmount']) ? e(money((float) $order->cancellation['refundAmount'], $order->cancellation['refundCurrency'] ?? $order->currency)) : 'not available' ?></dd>
             </dl>
         <?php endif; ?>
     </div>
@@ -46,6 +47,9 @@
         <div class="side-card">
             <?php if ($order->vouchers !== []): ?>
                 <h3>Voucher</h3>
+                <?php foreach ($order->vouchers as $v): ?>
+                    <p class="small"><?= e(strtoupper((string) ($v['format'] ?? ''))) ?><?= !empty($v['scope']) ? ', ' . e($v['scope']) : '' ?><?= !empty($v['expiresAt']) ? ', expires ' . e(substr((string) $v['expiresAt'], 0, 10)) : '' ?></p>
+                <?php endforeach; ?>
                 <a class="btn btn-ghost btn-block" href="/orders/<?= e(rawurlencode($order->orderNumber)) ?>/voucher">Open voucher</a>
                 <a class="btn btn-ghost btn-block" href="/orders/<?= e(rawurlencode($order->orderNumber)) ?>/voucher?format=pdf">Download PDF</a>
             <?php endif; ?>

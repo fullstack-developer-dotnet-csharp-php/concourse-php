@@ -23,7 +23,7 @@ final class Catalog
         }
         $rows = $this->store->all();
         if ($rows === []) {
-            throw new \RuntimeException('The catalog store is empty. Run "php bin/sync.php" to load attractions from the API.');
+            throw new \App\Support\CatalogEmptyException('The catalog store is empty. Load it from the System page or run php bin/sync.php --all.');
         }
         return $this->all = array_map(static fn(array $r) => Attraction::fromArray($r), $rows);
     }
