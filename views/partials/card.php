@@ -18,7 +18,6 @@
                 <?php else: ?>
                     <span class="muted">Price on request</span>
                 <?php endif; ?>
-                <?php if (!$a->bookable): ?><span class="badge">Not bookable</span><?php endif; ?>
             </p>
         </div>
     </a>

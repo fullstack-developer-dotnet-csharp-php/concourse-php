@@ -34,11 +34,12 @@ $canonical = $seo->canonical !== '' ? $seo->canonical : '';
 <?php endif; ?>
 <meta name="twitter:card" content="<?= $seo->image !== '' ? 'summary_large_image' : 'summary' ?>">
 <meta name="twitter:title" content="<?= e($title) ?>">
-<meta name="theme-color" content="#4f46e5">
+<meta name="theme-color" content="#0e6b6f">
 <meta name="referrer" content="no-referrer">
 <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
 <link rel="alternate" type="text/plain" href="/llms.txt" title="LLMs">
 <link rel="stylesheet" href="/assets/css/site.css?v=<?= e(filemtime(__DIR__ . '/../public/assets/css/site.css')) ?>">
+<link rel="stylesheet" href="/assets/css/ui.css?v=<?= e(filemtime(__DIR__ . '/../public/assets/css/ui.css')) ?>">
 <?= $seo->renderJsonLd() ?>
 </head>
 <body>
@@ -90,6 +91,7 @@ $canonical = $seo->canonical !== '' ? $seo->canonical : '';
         </ul>
     </div>
 </footer>
+<script src="/assets/js/gallery.js?v=<?= e(filemtime(__DIR__ . '/../public/assets/js/gallery.js')) ?>" defer></script>
 <script src="/assets/js/app.js?v=<?= e(filemtime(__DIR__ . '/../public/assets/js/app.js')) ?>" defer></script>
 </body>
 </html>

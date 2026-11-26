@@ -25,7 +25,8 @@ final class Catalog
         if ($rows === []) {
             throw new \App\Support\CatalogEmptyException('The catalog store is empty. Load it from the System page or run php bin/sync.php --all.');
         }
-        return $this->all = array_map(static fn(array $r) => Attraction::fromArray($r), $rows);
+        $all = array_map(static fn(array $r) => Attraction::fromArray($r), $rows);
+        return $this->all = array_values(array_filter($all, static fn(Attraction $a) => $a->bookable));
     }
 
     public function navigation(int $limit): array
@@ -82,6 +83,7 @@ final class Catalog
         if ($ranked === []) {
             $ranked = $this->rank($this->all(), $tokens, $q, true);
         }
+        $ranked = array_values(array_filter($ranked, static fn(Attraction $a) => $a->bookable));
         return array_slice($ranked, 0, $limit);
     }
 

@@ -40,16 +40,7 @@ $bookingData = ['currency' => $currency, 'needsEvent' => $needsEvent, 'offers' =
 
 <div class="container layout-main"<?= $product->contentVersion !== null ? ' data-content-version="' . e($product->contentVersion) . '"' : '' ?>>
     <div class="content">
-<?php if (count($product->images) > 1): ?>
-            <section class="gallery" aria-label="Photos">
-                <?php foreach (array_slice($product->images, 1) as $img): ?>
-                    <figure>
-                        <img src="<?= e($img['url'] ?? '') ?>" alt="<?= e(($img['alt'] ?? '') !== '' ? $img['alt'] : $product->name) ?>" width="400" height="260" loading="lazy">
-                        <?php if (($img['caption'] ?? '') !== ''): ?><figcaption><?= e($img['caption']) ?></figcaption><?php endif; ?>
-                    </figure>
-                <?php endforeach; ?>
-            </section>
-        <?php endif; ?>
+        <?= App\Support\View::partial('gallery', ['images' => $product->images, 'hero' => $attraction->heroImageUrl, 'name' => $product->name]) ?>
 
         <?php if ($product->description): ?><div class="prose"><?= Html::clean($product->description) ?></div><?php endif; ?>
 
@@ -59,9 +50,7 @@ $bookingData = ['currency' => $currency, 'needsEvent' => $needsEvent, 'offers' =
             </dl>
         <?php endif; ?>
 
-        <?php if (!$product->bookable): ?>
-            <div class="notice">This ticket is not bookable through the API.</div>
-        <?php else: ?>
+        <?php if ($product->bookable): ?>
             <form id="booking" class="booking" action="/book/<?= e(rawurlencode($attraction->id)) ?>/<?= e(rawurlencode($product->id)) ?>" method="post" novalidate>
                 <input type="hidden" name="idempotencyKey" value="<?= e($idempotencyKey) ?>">
                 <input type="hidden" name="eventKey" id="eventKey" value="">
@@ -142,6 +131,10 @@ $bookingData = ['currency' => $currency, 'needsEvent' => $needsEvent, 'offers' =
                 </div>
                 <p id="form-error" class="error" role="alert" hidden></p>
             </form>
+            <a class="mobile-cta" href="#booking" aria-label="Choose your tickets">
+                <?php if ($product->fromPrice() !== null): ?><span class="price"><small>From</small><?= e(money($product->fromPrice(), $product->offers[0]->currency ?? 'USD')) ?></span><?php else: ?><span class="muted small">Live prices and availability</span><?php endif; ?>
+                <span class="btn btn-primary"><?= $needsEvent ? 'Choose a date' : 'Choose tickets' ?></span>
+            </a>
             <script type="application/json" id="booking-data"><?= json_encode($bookingData, JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP) ?></script>
         <?php endif; ?>
 

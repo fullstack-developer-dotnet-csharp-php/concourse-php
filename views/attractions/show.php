@@ -10,20 +10,7 @@
 
 <div class="container layout-main"<?= $attraction->contentVersion !== null ? ' data-content-version="' . e($attraction->contentVersion) . '"' : '' ?>>
     <div class="content">
-        <?php if ($attraction->heroImageUrl): ?>
-            <img class="hero-img" src="<?= e($attraction->heroImageUrl) ?>" alt="<?= e($attraction->name) ?>" width="1200" height="630" fetchpriority="high">
-        <?php endif; ?>
-
-        <?php if (count($attraction->images) > 1): ?>
-            <section class="gallery" aria-label="Photos">
-                <?php foreach (array_slice($attraction->images, 1) as $img): ?>
-                    <figure>
-                        <img src="<?= e($img['url'] ?? '') ?>" alt="<?= e(($img['alt'] ?? '') !== '' ? $img['alt'] : $attraction->name) ?>" width="400" height="260" loading="lazy">
-                        <?php if (($img['caption'] ?? '') !== ''): ?><figcaption><?= e($img['caption']) ?></figcaption><?php endif; ?>
-                    </figure>
-                <?php endforeach; ?>
-            </section>
-        <?php endif; ?>
+        <?= App\Support\View::partial('gallery', ['images' => $attraction->images, 'hero' => $attraction->heroImageUrl, 'name' => $attraction->name]) ?>
 
         <?php if ($attraction->notice): ?><div class="notice"><?= Html::clean($attraction->notice) ?></div><?php endif; ?>
 
@@ -43,11 +30,11 @@
 
         <section aria-labelledby="tix-h" id="tickets">
             <h2 id="tix-h">Tickets and experiences</h2>
-            <?php if ($products === []): ?>
+            <?php if (!array_filter($products, static fn($p) => $p->bookable)): ?>
                 <p class="muted">No tickets are listed for this attraction.</p>
             <?php endif; ?>
             <ul class="product-list">
-                <?php foreach ($products as $p): ?>
+                <?php foreach ($products as $p): if (!$p->bookable) { continue; } ?>
                     <li class="product-row">
                         <div>
                             <h3><a href="<?= e($p->path($attraction)) ?>"><?= e($p->name) ?></a></h3>
@@ -59,11 +46,7 @@
                         </div>
                         <div class="product-cta">
                             <?php if ($p->fromPrice() !== null): ?><span class="price"><small>From</small> <?= e(money($p->fromPrice(), $p->offers[0]->currency ?? 'USD')) ?></span><?php endif; ?>
-                            <?php if ($p->bookable): ?>
-                                <a class="btn btn-primary" href="<?= e($p->path($attraction)) ?>">Check availability</a>
-                            <?php else: ?>
-                                <span class="badge">Not bookable</span>
-                            <?php endif; ?>
+                            <a class="btn btn-primary" href="<?= e($p->path($attraction)) ?>">Check availability</a>
                         </div>
                     </li>
                 <?php endforeach; ?>
