@@ -54,6 +54,7 @@ h3 { font-size: 1.1rem; }
 .account-chip { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: .9rem; white-space: nowrap; }
 .account-chip img { border-radius: 999px; }
 .inline-form { display: inline-flex; margin: 0; }
+.auth-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
 .main-nav { display: flex; gap: 16px; }
 .main-nav a { color: var(--text); font-weight: 600; }
 .main-nav { align-items: center; }

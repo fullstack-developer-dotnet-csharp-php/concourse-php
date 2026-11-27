@@ -104,6 +104,10 @@ final class Kernel
         $r->add('GET', '/attractions/{id}/{slug}',fn(string $id, string $slug) => $attractions->show($id, $slug));
         $r->add('GET', '/attractions/{id}/{slug}/tickets/{productId}', fn(string $id, string $slug, string $productId) => $attractions->product($id, $slug, $productId));
         $r->add('POST', '/book/{id}/{productId}', fn(string $id, string $productId) => $booking->book($id, $productId));
+        $r->add('GET', '/register', fn() => $auth->registerForm());
+        $r->add('POST', '/register', fn() => $auth->register());
+        $r->add('GET', '/login', fn() => $auth->loginForm());
+        $r->add('POST', '/login', fn() => $auth->login());
         if (Config::bool('auth.google.enabled')) {
             $r->add('GET', '/auth/google', fn() => $auth->start());
             $r->add('GET', '/auth/google/callback', fn() => $auth->callback());

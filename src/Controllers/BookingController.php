@@ -6,6 +6,8 @@ namespace App\Controllers;
 use App\Payments\Gateway;
 use App\Services\Concourse;
 use App\Support\Csrf;
+use App\Support\Customer;
+use App\Support\ForbiddenException;
 use App\Support\NotFoundException;
 use App\Support\Response;
 use RuntimeException;
@@ -19,6 +21,9 @@ final class BookingController
     public function book(string $attractionId, string $productId): Response
     {
         Csrf::verify();
+        if (!Customer::isLoggedIn()) {
+            throw new ForbiddenException('Please sign in or create a free account before booking.');
+        }
         if (preg_match('/^[0-9a-f]{24}$/', $attractionId) !== 1 || preg_match('/^[0-9a-f]{24}$/', $productId) !== 1) {
             throw new NotFoundException('Unknown id.');
         }

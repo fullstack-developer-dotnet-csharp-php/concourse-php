@@ -63,7 +63,9 @@ Cashfree: enter the App ID and Secret key, pick sandbox or production, and turn 
 
 Order pages (`/orders`) now require the admin login.
 
-Google sign-in (optional, for customers): in the Google Cloud Console create an OAuth client (Credentials, OAuth client ID, type Web application) and set its authorized redirect URI to `https://your-site/auth/google/callback`. Enter the Client ID and secret on the settings page and turn on "Allow sign in with Google". A "Sign in with Google" link then appears in the site header; visitors can still book as a guest either way. This is separate from the admin login.
+Customer accounts: visitors must register (`/register`, email and password) or sign in (`/login`) before they can book a ticket. A product page shows a "Sign in to book this ticket" prompt instead of the booking form until they do, and the booking endpoint rejects the request server-side either way. Accounts are stored with the catalog's storage driver (SleekDB or MySQL, same setting as "Catalog storage"), so no extra setup is needed. First and last name and email come from the account and are pre-filled into the booking form.
+
+Google sign-in (optional, in addition to the email and password account): in the Google Cloud Console create an OAuth client (Credentials, OAuth client ID, type Web application) and set its authorized redirect URI to `https://your-site/auth/google/callback`. Enter the Client ID and secret on the settings page and turn on "Allow sign in with Google". A "Sign in with Google" button then appears on the sign-in and registration pages; signing in with Google creates an account automatically (and links to an existing email/password account of the same address). This is separate from the admin login.
 
 ## Install on shared hosting (GoDaddy, Hostinger and similar)
 

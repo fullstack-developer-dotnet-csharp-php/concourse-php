@@ -1,7 +1,9 @@
 <?php
 use App\Models\Offer;
 use App\Support\Config;
+use App\Support\Customer;
 
+$customer = Customer::user();
 $needsEvent = $product->needsEvent();
 $first = $month;
 $prev = $first->modify('-1 month');
@@ -36,6 +38,15 @@ $bookingData = ['currency' => $currency, 'needsEvent' => $needsEvent, 'offers' =
                 <p>The supplier has not released any dates for sale between today and <?= e($horizon->format('j F Y')) ?>. Tickets can only be booked once dates are open, so there is nothing to choose right now.</p>
                 <p class="muted">Please check again later<?php if ($product->fromPrice() !== null): ?>. Prices start from <strong><?= e(money($product->fromPrice(), $product->offers[0]->currency ?? 'USD')) ?></strong> per person<?php endif; ?>.</p>
                 <a class="btn btn-ghost" href="/attractions">Browse other attractions</a>
+            </section>
+        <?php elseif ($product->bookable && !$customer): ?>
+            <section class="notice-card" id="booking" aria-labelledby="signin-h">
+                <h2 id="signin-h">Sign in to book this ticket</h2>
+                <p>Create a free account or sign in to select dates, choose tickets and complete your booking.</p>
+                <div class="auth-actions">
+                    <a class="btn btn-primary" href="/register?next=<?= e(rawurlencode($path)) ?>">Create account</a>
+                    <a class="btn btn-ghost" href="/login?next=<?= e(rawurlencode($path)) ?>">Sign in</a>
+                </div>
             </section>
         <?php elseif ($product->bookable): ?>
             <form id="booking" class="booking" action="/book/<?= e(rawurlencode($attraction->id)) ?>/<?= e(rawurlencode($product->id)) ?>" method="post" novalidate>
@@ -102,10 +113,10 @@ $bookingData = ['currency' => $currency, 'needsEvent' => $needsEvent, 'offers' =
                 <section id="guest-section" hidden aria-labelledby="guest-h">
                     <h2 id="guest-h">Guest details</h2>
                     <div class="form-grid">
-                        <label>First name<input name="guest[first]" required></label>
-                        <label>Last name<input name="guest[last]" required></label>
+                        <label>First name<input name="guest[first]" required value="<?= e($customer['first'] ?? '') ?>"></label>
+                        <label>Last name<input name="guest[last]" required value="<?= e($customer['last'] ?? '') ?>"></label>
                         <?php $paying = Config::bool('payments.enabled'); ?>
-                        <label>Email<?= $paying ? ' *' : '' ?><input type="email" name="guest[email]"<?= $paying ? ' required' : '' ?>></label>
+                        <label>Email<?= $paying ? ' *' : '' ?><input type="email" name="guest[email]"<?= $paying ? ' required' : '' ?> value="<?= e($customer['email'] ?? '') ?>"></label>
                         <?php if ($paying): ?><label>Phone *<input type="tel" name="guest[phone]" required inputmode="tel" autocomplete="tel"></label><?php endif; ?>
                     </div>
                     <div id="booking-fields"></div>

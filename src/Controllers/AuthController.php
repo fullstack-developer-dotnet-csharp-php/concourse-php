@@ -10,11 +10,48 @@ use App\Support\Customer;
 use App\Support\ForbiddenException;
 use App\Support\Log;
 use App\Support\Response;
+use App\Support\Seo;
 use App\Support\Session;
+use App\Support\View;
 use Throwable;
 
 final class AuthController
 {
+    public function registerForm(): Response
+    {
+        if (Customer::isLoggedIn()) {
+            return Response::redirect($this->next());
+        }
+        return $this->page('auth/register', 'Create an account', ['next' => $this->next()]);
+    }
+
+    public function register(): Response
+    {
+        Csrf::verify();
+        Customer::register(
+            (string) ($_POST['email'] ?? ''),
+            (string) ($_POST['password'] ?? ''),
+            (string) ($_POST['first'] ?? ''),
+            (string) ($_POST['last'] ?? '')
+        );
+        return Response::redirect($this->next());
+    }
+
+    public function loginForm(): Response
+    {
+        if (Customer::isLoggedIn()) {
+            return Response::redirect($this->next());
+        }
+        return $this->page('auth/login', 'Sign in', ['next' => $this->next()]);
+    }
+
+    public function login(): Response
+    {
+        Csrf::verify();
+        Customer::attempt((string) ($_POST['email'] ?? ''), (string) ($_POST['password'] ?? ''));
+        return Response::redirect($this->next());
+    }
+
     public function start(): Response
     {
         Session::start();
@@ -49,7 +86,7 @@ final class AuthController
             Log::exception($e, 'Google sign-in failed');
             throw new ForbiddenException('Google sign-in did not work. Please try again.');
         }
-        Customer::login($profile);
+        Customer::loginWithGoogle($profile);
         return Response::redirect($next);
     }
 
@@ -58,6 +95,14 @@ final class AuthController
         Csrf::verify();
         Customer::logout();
         return Response::redirect($this->next());
+    }
+
+    private function page(string $template, string $title, array $data): Response
+    {
+        $seo = Seo::current();
+        $seo->title = $title . ' | ' . Config::string('site.name');
+        $seo->noindex = true;
+        return Response::html(View::render($template, $data));
     }
 
     private function redirectUri(): string

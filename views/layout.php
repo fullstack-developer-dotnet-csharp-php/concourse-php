@@ -72,7 +72,6 @@ $canonical = $seo->canonical !== '' ? $seo->canonical : '';
             <?php if (isset($nav['error'])): ?><span class="error small" title="<?= e($nav['error']) ?>">Menus unavailable</span><?php endif; ?>
             <a href="/attractions">Attractions</a>
         </nav>
-        <?php if (Config::bool('auth.google.enabled')): ?>
         <div class="header-account">
             <?php if ($customer = App\Support\Customer::user()): ?>
                 <span class="account-chip">
@@ -86,10 +85,10 @@ $canonical = $seo->canonical !== '' ? $seo->canonical : '';
                     <button type="submit" class="btn btn-ghost">Sign out</button>
                 </form>
             <?php else: ?>
-                <a class="btn btn-ghost" href="/auth/google?next=<?= e(rawurlencode((string) ($_SERVER['REQUEST_URI'] ?? '/'))) ?>">Sign in with Google</a>
+                <a class="btn btn-ghost" href="/login?next=<?= e(rawurlencode((string) ($_SERVER['REQUEST_URI'] ?? '/'))) ?>">Sign in</a>
+                <a class="btn btn-primary" href="/register?next=<?= e(rawurlencode((string) ($_SERVER['REQUEST_URI'] ?? '/'))) ?>">Create account</a>
             <?php endif; ?>
         </div>
-        <?php endif; ?>
     </div>
 </header>
 <main id="main">

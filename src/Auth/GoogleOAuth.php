@@ -57,6 +57,8 @@ final class GoogleOAuth
         return [
             'sub' => $sub,
             'email' => (string) ($data['email'] ?? ''),
+            'first' => (string) ($data['given_name'] ?? ''),
+            'last' => (string) ($data['family_name'] ?? ''),
             'name' => (string) ($data['name'] ?? ($data['email'] ?? 'Google user')),
             'picture' => (string) ($data['picture'] ?? ''),
         ];
