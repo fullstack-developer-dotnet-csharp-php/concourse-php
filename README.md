@@ -63,6 +63,8 @@ Cashfree: enter the App ID and Secret key, pick sandbox or production, and turn 
 
 Order pages (`/orders`) now require the admin login.
 
+Google sign-in (optional, for customers): in the Google Cloud Console create an OAuth client (Credentials, OAuth client ID, type Web application) and set its authorized redirect URI to `https://your-site/auth/google/callback`. Enter the Client ID and secret on the settings page and turn on "Allow sign in with Google". A "Sign in with Google" link then appears in the site header; visitors can still book as a guest either way. This is separate from the admin login.
+
 ## Install on shared hosting (GoDaddy, Hostinger and similar)
 
 Needs PHP 8.0 or newer with curl, json, mbstring and openssl (all standard). MySQL is optional; without it the catalog is stored in JSON files (SleekDB). No Composer, no SSH and no cron are required.

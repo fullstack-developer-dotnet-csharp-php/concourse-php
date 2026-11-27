@@ -38,6 +38,13 @@ $config = [
         'page_size' => 100,
         'pages_per_run' => 5,
     ],
+    'auth' => [
+        'google' => [
+            'enabled' => false,
+            'client_id' => '',
+            'client_secret' => '',
+        ],
+    ],
     'payments' => [
         'enabled' => false,
         'fx_rate' => '',

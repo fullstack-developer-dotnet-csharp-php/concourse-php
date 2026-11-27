@@ -7,6 +7,7 @@ use App\Api\ApiException;
 use App\Api\Client;
 use App\Controllers\AdminController;
 use App\Controllers\AttractionsController;
+use App\Controllers\AuthController;
 use App\Controllers\BookingController;
 use App\Controllers\CronController;
 use App\Controllers\HomeController;
@@ -93,6 +94,7 @@ final class Kernel
         $admin = new AdminController();
         $orders = new OrdersController($api);
         $seo = new SeoController($catalog);
+        $auth = new AuthController();
 
         $r = new Router();
         $r->add('GET', '/', fn() => $home->index());
@@ -102,6 +104,11 @@ final class Kernel
         $r->add('GET', '/attractions/{id}/{slug}',fn(string $id, string $slug) => $attractions->show($id, $slug));
         $r->add('GET', '/attractions/{id}/{slug}/tickets/{productId}', fn(string $id, string $slug, string $productId) => $attractions->product($id, $slug, $productId));
         $r->add('POST', '/book/{id}/{productId}', fn(string $id, string $productId) => $booking->book($id, $productId));
+        if (Config::bool('auth.google.enabled')) {
+            $r->add('GET', '/auth/google', fn() => $auth->start());
+            $r->add('GET', '/auth/google/callback', fn() => $auth->callback());
+        }
+        $r->add('POST', '/auth/logout', fn() => $auth->logout());
         if (Config::bool('site.orders_enabled')) {
             $guard = static fn(callable $handler): callable => static fn(string ...$args) => Admin::require() ?? $handler(...$args);
             $r->add('GET', '/orders', $guard(fn() => $orders->index()));

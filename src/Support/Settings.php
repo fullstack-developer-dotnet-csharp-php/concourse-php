@@ -34,6 +34,11 @@ final class Settings
                 ['sync.page_size', 'Sync page size', 'int', 'Attractions fetched per API call.', 10, 100],
                 ['sync.pages_per_run', 'Sync pages per run', 'int', 'Lower this if your host stops long scripts. The sync resumes where it stopped.', 1, 100],
             ],
+            'Customer login (Google)' => [
+                ['auth.google.enabled', 'Allow sign in with Google', 'bool', 'Shows a Google sign-in link in the header. Visitors can still book as a guest either way.'],
+                ['auth.google.client_id', 'Client ID', 'text', 'From the Google Cloud Console, APIs & Services, Credentials, OAuth client ID (type: Web application). Set its authorized redirect URI to your site address plus /auth/google/callback, for example https://your-site/auth/google/callback.'],
+                ['auth.google.client_secret', 'Client secret', 'secret', 'Leave blank to keep the saved secret.'],
+            ],
             'Payments (Cashfree)' => [
                 ['payments.enabled', 'Take payment before booking', 'bool', 'When off, the booking form sends the order straight to the supplier with no payment.'],
                 ['payments.cashfree.mode', 'Mode', 'select', 'Use sandbox with test keys first.', ['sandbox' => 'Sandbox (test)', 'production' => 'Production (live)']],
@@ -156,6 +161,15 @@ final class Settings
                 } else {
                     $changes[$path] = $value;
                 }
+            }
+        }
+        if (($changes['auth.google.enabled'] ?? false) === true) {
+            if (($changes['auth.google.client_id'] ?? '') === '') {
+                $errors['auth.google.client_id'] = 'Client ID is required when Google sign-in is on.';
+            }
+            $hasGoogleSecret = ($changes['auth.google.client_secret'] ?? '') !== '' || self::hasSaved('auth.google.client_secret');
+            if (!$hasGoogleSecret) {
+                $errors['auth.google.client_secret'] = 'Client secret is required when Google sign-in is on.';
             }
         }
         if (($changes['payments.enabled'] ?? false) === true) {
